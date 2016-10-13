@@ -500,10 +500,6 @@ void LRQPCalcDx( int *n, int *m, int *p, int *method, double *Q, double *c,
         VectorVectorCopy( dalpha, r , n);
         MatrixVectorMult( &mone, R, 0, dbeta, &pone, dalpha, n, p );
     }
-    else
-    {
-        LRQPSolve( n, m, &one, method, Q, D, r5, dalpha, M, pivN, buffMx1, P, Beta, Lambda );
-    }
     for (i=0;i<(*n);i++) dzeta[i] = r3[i] - (ZetaOnAlpha[i] * dalpha[i]);
     for (i=0;i<(*n);i++) dxi[i]   = r4[i] + (XiOnUminusAlpha[i] * dalpha[i]);
 
