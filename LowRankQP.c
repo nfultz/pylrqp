@@ -401,7 +401,7 @@ void LRQPCalcDx( int *n, int *m, int *p, int *method, double *Q, double *c,
     double pone =  1.0;
     double mone = -1.0;
     double zero =  0.0;
-    if ((predcorr==PRED)&&(*p))
+    if (predcorr==PRED)
     {
         LRQPSolve( n, m, p, method, Q, D, A, R, M, pivN, buffMxP, P, Beta, Lambda );
     }
