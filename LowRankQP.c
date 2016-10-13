@@ -110,15 +110,6 @@ void VectorVectorMult( double* alpha, double* x, double* y, int* n )
 
 /*****************************************************************************/
 
-void VectorVectorMinus( double* x, double* y, double* res, int* n )
-{
-    double alpha = -1.0;
-    VectorVectorCopy( res, x, n );
-    VectorVectorMult( &alpha, y, res, n );
-}
-
-/*****************************************************************************/
-
 double VectorVectorDot( double* x, double* y, int* n )
 {
     int one=1;
@@ -278,7 +269,10 @@ void LRQPCalcStats( int *n, int *m, int *p, double *Q, double *c, double *A,
     double mone = -1.0;
     double zero =  0.0;
     MatrixVectorMult( &pone, Q, 1, alpha, &zero, w, n, m );
-    VectorVectorMinus( u, alpha, UminusAlpha, n );
+
+    VectorVectorCopy( UminusAlpha, u, n ); // UminusAlpha = u
+    VectorVectorMult( &mone, alpha, UminusAlpha, n ); // UminusAlpha = UminusAlpha + -1 * alpha
+
     VectorVectorDivide( xi, UminusAlpha, XiOnUminusAlpha, n );
     VectorVectorDivide( zeta, alpha, ZetaOnAlpha, n );
 
