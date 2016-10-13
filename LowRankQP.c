@@ -184,23 +184,6 @@ void MatrixCholSolve( double* A, int* n, double* rhs, int *nrhs, int* info )
     /* dpotrs('L', *n, *nrhs, A, *n, rhs, *n, info ); */
 }
 
-/*****************************************************************************/
-
-void MatrixLUFactorize( double* A, int* n, int* ipiv, int* info )
-{
-    dgetrf_( n, n, A, n, ipiv, info );
-    /* dgetrf( *n, *n, A, *n, ipiv, info ); */
-}
-
-/*****************************************************************************/
-
-void MatrixLUSolve( double* A, int* n, int* ipiv, double* rhs, int *nrhs )
-{
-    int info = 0;
-    int one  = 1;
-    dgetrs_("N", n, nrhs, A, n, ipiv, rhs, n, &info );
-    /* dgetrs('N', *n, *nrhs, A, *n, ipiv, rhs, *n, &info ); */
-}
 
 /*****************************************************************************/
 
@@ -219,32 +202,7 @@ void MatrixMatrixCopy( double* lhs, double* rhs, int* rows, int* cols )
     for (i=0;i<len;i++) lhs[i] = rhs[i];
 }
 
-/*****************************************************************************/
 
-void MatrixMatrixMinus( double* x, double* y, double* res, int* rows, int* cols)
-{
-    int i;
-    int len = (*rows)*(*cols);
-    for (i=0;i<len;i++) res[i] = x[i] - y[i];
-}
-
-/*****************************************************************************/
-
-void MatrixMatrixPlus( double* x, double* y, double* res, int* rows, int* cols)
-{
-    int i;
-    int len = (*rows)*(*cols);
-    for (i=0;i<len;i++) res[i] = x[i] + y[i];
-}
-
-/*****************************************************************************/
-
-void MatrixMatrixPlusEquals( double* x, double* res, int* rows, int* cols)
-{
-    int i;
-    int len = (*rows)*(*cols);
-    for (i=0;i<len;i++) res[i] += x[i] ;
-}
 
 /*****************************************************************************/
 
@@ -421,96 +379,6 @@ void LRQPSummary( int i, int niter, int method, int n, int m, double *prim,
         printf("    Complementarity Value = %15.7e\n", *comp);
         printf("    Duality Gap           = %15.7e\n", *gap);
         printf("    Termination Condition = %15.7e\n", *term);
-    }
-}
-
-/****************************************************************************/
-
-void PfcfSolve( int *n, double *p, double *beta, double *r, int trans )
-{
-    int j;
-    double sigma;
-    int nm1 = (*n)-1;
-    if (trans)
-    {
-        sigma = r[nm1]*p[nm1];
-        for (j=(nm1-1);j>0;j--)
-        {
-            r[j]  -= sigma*beta[j];
-            sigma += r[j]*p[j];
-        }
-        r[0] -= sigma*beta[0];
-    }
-    else
-    {
-        sigma = r[0]*beta[0];
-        for (j=1;j<nm1;j++)
-        {
-            r[j]  -= sigma*p[j];
-            sigma += r[j]*beta[j];
-        }
-        r[nm1] -= sigma*p[nm1];
-    }
-}
-
-/****************************************************************************/
-
-void PfcfFactorize( int *n, int *m, double *Q, double *D, double *P,
-    double *Beta, double *Lambda, double *LambdaTemp, double *t  )
-{
-    int i, j, k;
-    double infinity = 1.0e12;
-    double epsilon  = 1.0e-12;
-    double temp;
-
-    int one = 1;
-
-    int ind;
-    int indi;
-    int indj;
-
-    VectorVectorCopy( LambdaTemp, D, n );
-    MatrixMatrixCopy( P, Q, n, m );
-    for (i=0;i<(*m);i++)
-    {
-        for (j=0;j<i;j++) PfcfSolve( n, P+j*(*n), Beta+j*(*n), P+i*(*n), 0 );
-        t[0] = 1.0;
-        for (j=0;j<(*n);j++)
-        {
-            ind  = j+i*(*n);
-            temp = P[ind];   
-            if ( fabs(t[j]) < infinity )
-            {
-                if ( fabs(LambdaTemp[j]) > epsilon )
-                {
-                    t[j+1]    = t[j] + ( temp*temp ) / LambdaTemp[j];
-                    Lambda[j] = LambdaTemp[j]*t[j+1] / t[j];
-                    Beta[ind] = temp / ( LambdaTemp[j] * t[j+1]);
-                }
-                else
-                {
-                    if ( fabs(temp) > epsilon )
-                    {
-                        t[j+1]    = infinity;
-                        Lambda[j] = temp*temp / t[j];
-                        Beta[ind] = 1.0 / temp;
-                    }
-                    else
-                    {
-                        t[j+1]    = t[j];
-                        Lambda[j] = 0.0;
-                        Beta[ind] = 0.0;
-                    }
-                }
-            }
-            else
-            {
-                t[j+1]    = infinity;
-                Lambda[j] = LambdaTemp[j];
-                Beta[ind] = 0.0;
-            }
-        }
-        VectorVectorCopy( LambdaTemp, Lambda, n );
     }
 }
 
