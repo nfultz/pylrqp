@@ -33,12 +33,6 @@ extern void   dgemm_(const char *transa, const char *transb, const int *m,
         *c, const int *ldc);
 
 /**** LAPACK ****/
-extern void dgetrf_(const int* m, const int* n, double* a, const int* lda,
-                 int* ipiv, int* info);
-extern void dgetrs_(const char* trans, const int* n, const int* nrhs,
-                 const double* a, const int* lda, const int* ipiv,
-                         double* b, const int* ldb, int* info);
-
 
 extern void dpotrf_(const char* uplo, const int* n,
                  double* a, const int* lda, int* info);
