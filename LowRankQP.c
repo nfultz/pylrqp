@@ -163,14 +163,6 @@ void MatrixCholSolve( double* A, int* n, double* rhs, int *nrhs, int* info )
 
 /*****************************************************************************/
 
-void MatrixMatrixPlusDiag( double* A, double* D, int* n )
-{
-    int i;
-    for (i=0;i<(*n);i++) A[i+i*(*n)] += D[i];
-}
-
-/*****************************************************************************/
-
 void MatrixMatrixCopy( double* lhs, double* rhs, int* rows, int* cols )
 {
     int i;
@@ -352,7 +344,8 @@ void LRQPFactorize( int *n, int *m, int *method, double *Q, double *D,
     double zero =  0.0;
 
         MatrixMatrixCopy( M, Q, n, n );
-        MatrixMatrixPlusDiag( M, D, n );
+    // diag(M) = Diag(M) + D
+    for (int i=0;i<(*n);i++) M[i+i*(*n)] += D[i];
         MatrixCholFactorize( M, n, &info );
 }
 
