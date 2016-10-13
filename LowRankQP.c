@@ -70,15 +70,6 @@ void PrintMatrix( char* name, double* vals, int* rows, int* cols )
 
 /*****************************************************************************/
 
-void VectorVectorMult( double* alpha, double* x, double* y, int* n )
-{
-    int one=1;
-    daxpy_( n, alpha, x, &one, y, &one );
-    /* daxpy( n, alpha, x, &one, y, &one ); */
-}
-
-/*****************************************************************************/
-
 double VectorVectorDot( double* x, double* y, int* n )
 {
     int one=1;
@@ -109,7 +100,7 @@ void LRQPInitPoint( int *n, int *m, int *p, double *Q, double *c, double *A,
 
     dgemv_("T", n, m, &pone, Q, n, alpha, &one, &zero, w, &one ); // w = Q' * alpha
     for (i=0;i<(*n);i++) temp[i] += -w[i];
-    VectorVectorMult( &mone, c, temp, n );
+    daxpy_(n, &mone, c, &one, temp, &one); //temp = temp - c
     for (i=0;i<(*n);i++)
     {
         xi[i]   = MAX(EPSINIT,temp[i]);
@@ -164,17 +155,17 @@ void LRQPCalcStats( int *n, int *m, int *p, double *Q, double *c, double *A,
 
 
     dcopy_(n, u, &one, UminusAlpha, &one);  // UminusAlpha = u
-    VectorVectorMult( &mone, alpha, UminusAlpha, n ); // UminusAlpha = UminusAlpha + -1 * alpha
+    daxpy_(n, &mone, alpha, &one, UminusAlpha, &one); //// UminusAlpha = UminusAlpha + -1 * alpha
 
     for (i=0;i<(*n);i++) XiOnUminusAlpha[i] = xi[i]/UminusAlpha[i];
     for (i=0;i<(*n);i++) ZetaOnAlpha[i] = zeta[i]/alpha[i];
 
 
         dgemv_("N", n, p, &mone, A, n, beta, &one, &zero, r1, &one); // r1 = -A * beta
-        VectorVectorMult( &mone, w,  r1, n );
-        VectorVectorMult( &mone, c,  r1, n );
-        VectorVectorMult( &mone, xi, r1, n );
-        VectorVectorMult( &pone, zeta, r1, n );
+        daxpy_(n, &mone, w, &one, r1, &one ); // r1= r1 - w
+        daxpy_(n, &mone, c, &one, r1, &one ); // r1= r1 - c
+        daxpy_(n, &mone, xi, &one, r1, &one ); // r1= r1 - xi
+        daxpy_(n, &pone, zeta, &one, r1, &one ); // r1= r1 + zeta
         quad = VectorVectorDot( alpha, w, n );
 
 
@@ -351,6 +342,7 @@ void LRQPStep( int *n, int *p, double *alpha, double* beta, double *xi,
     double *UminusAlpha, double *mult)
 {
     int i;
+    int one = 1;
     *mult= 1.0;
     for (i=0;i<(*n);i++)
     {
@@ -360,10 +352,10 @@ void LRQPStep( int *n, int *p, double *alpha, double* beta, double *xi,
         if (dzeta[i]<0.0)  *mult = MIN(*mult,(-zeta[i]/dzeta[i]));
     }
     *mult *= 0.99;
-    VectorVectorMult( mult, dalpha, alpha, n );
-    VectorVectorMult( mult, dbeta,  beta,  p );
-    VectorVectorMult( mult, dxi,    xi,    n );
-    VectorVectorMult( mult, dzeta,  zeta,  n );
+    daxpy_(n, mult, dalpha, &one, alpha, &one);
+    daxpy_(p, mult, dbeta, &one, beta, &one);
+    daxpy_(n, mult, dxi, &one, xi, &one);
+    daxpy_(n, mult, dzeta, &one, zeta, &one);
 }
 
 /******************************************************************************/
