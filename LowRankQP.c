@@ -267,8 +267,7 @@ void LRQPInitPoint( int *n, int *m, int *p, double *Q, double *c, double *A,
     for (i=0;i<(*n);i++) alpha[i] = MIN(EPSINIT,u[i]*EPSINIT);
     for (i=0;i<(*p);i++) beta[i]  = 0.0;
     MatrixVectorMult( &pone, Q, 1, alpha, &zero, w, n, m );
-    if ( (*n)!=(*m) ) MatrixVectorMult( &mone, Q, 0, w, &zero, temp, n, m );
-    else              for (i=0;i<(*n);i++) temp[i] += -w[i];
+    for (i=0;i<(*n);i++) temp[i] += -w[i];
     VectorVectorMult( &mone, c, temp, n );
     for (i=0;i<(*n);i++)
     {
@@ -326,7 +325,6 @@ void LRQPCalcStats( int *n, int *m, int *p, double *Q, double *c, double *A,
     if ( (*n)==(*m) )
     {   
         if (*p) MatrixVectorMult( &mone, A, 0, beta, &zero, r1, n, p );
-        else    MatrixConstantSet( r1, 0.0, n, &one );
         VectorVectorMult( &mone, w,  r1, n );
         VectorVectorMult( &mone, c,  r1, n );
         VectorVectorMult( &mone, xi, r1, n );
@@ -343,7 +341,6 @@ void LRQPCalcStats( int *n, int *m, int *p, double *Q, double *c, double *A,
     *comp   = VectorVectorDot( alpha, zeta, n ) + VectorVectorDot( UminusAlpha, xi, n );
     cTalpha = VectorVectorDot( c, alpha, n );
     if (*p) *gap = fabs( quad + cTalpha + VectorVectorDot( u, xi, n ) + VectorVectorDot( b, beta, p ) );
-    else    *gap = fabs( quad + cTalpha + VectorVectorDot( u, xi, n ) );
     *term   = *comp / ( fabs( 0.5*quad + cTalpha) + 1.0);
     temp    = (1.0 - *mult + EPSIPM)/(10.0 + *mult);
     *t      = *comp*(temp*temp)/(2*(*n));
