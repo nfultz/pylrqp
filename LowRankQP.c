@@ -352,7 +352,7 @@ void LowRankQP( int *n, int *m, int *p, int* method, int* verbose, int* niter,
 
     /* Step direction vectors */
     double *dalpha = (double *) calloc( (*n), sizeof(double) );
-    double *dbeta;
+    double *dbeta  = (double *) calloc( (*p), sizeof(double) );
     double *dxi    = (double *) calloc( (*n), sizeof(double) );
     double *dzeta  = (double *) calloc( (*n), sizeof(double) );
 
@@ -364,21 +364,21 @@ void LowRankQP( int *n, int *m, int *p, int* method, int* verbose, int* niter,
     /* Some vectors used during calculations */
     double *w  = (double *) calloc( *m, sizeof(double) );
     double *r1 = (double *) calloc( *n, sizeof(double) );
-    double *r2;
+    double *r2 = (double *) calloc( *p, sizeof(double) );;
     double *r3 = (double *) calloc( *n, sizeof(double) );
     double *r4 = (double *) calloc( *n, sizeof(double) );
     double *r5 = (double *) calloc( *n, sizeof(double) );
     double *D  = (double *) calloc( *n, sizeof(double) );
     double *r  = (double *) calloc( *n, sizeof(double) );
-    double *R;
+    double *R  = (double *) calloc( (*n)*(*p), sizeof(double) );;
 
     /* Various Buffers */
-    double *buffMxP;
-    double *buffPxP;
-    double *buffPx1;
+    double *buffMxP = (double *) calloc( (*m)*(*p), sizeof(double) );;
+    double *buffPxP = (double *) calloc( (*p)*(*p), sizeof(double) );;
+    double *buffPx1 = (double *) calloc( (*p), sizeof(double) );;
 
-    double *M;
-    int    *pivN;
+    double *M = (double *) calloc( (*n)*(*n), sizeof(double) );;
+    int    *pivN = (int *) calloc( *n, sizeof(int) );;
 
     double *buffMx1;
 
@@ -389,15 +389,7 @@ void LowRankQP( int *n, int *m, int *p, int* method, int* verbose, int* niter,
     double *T;
 
     /* Vectors to be created if p!=0 */
-        dbeta   = (double *) calloc( (*p), sizeof(double) );
-        r2      = (double *) calloc( (*p), sizeof(double) );
-        R       = (double *) calloc( (*n)*(*p), sizeof(double) );
-        buffMxP = (double *) calloc( (*m)*(*p), sizeof(double) );
-        buffPxP = (double *) calloc( (*p)*(*p), sizeof(double) );
-        buffPx1 = (double *) calloc( (*p), sizeof(double) );
 
-        M    = (double *) calloc( (*n)*(*n), sizeof(double) );
-        pivN = (int *) calloc( *n, sizeof(int) );
 
     /* Main Loop */
     if ( *verbose ) LRQPHeader();
