@@ -70,15 +70,6 @@ void PrintMatrix( char* name, double* vals, int* rows, int* cols )
 
 /*****************************************************************************/
 
-double VectorAbsSum( double* v, int *n )
-{
-    int one=1;
-    return dasum_( n, v, &one );
-    /* return dasum( n, v, &one ); */
-}
-
-/*****************************************************************************/
-
 void VectorVectorCopy( double* lhs, double* rhs, int* n )
 {
     int one=1;
@@ -156,40 +147,6 @@ void MatrixMatrixCopy( double* lhs, double* rhs, int* rows, int* cols )
 }
 
 
-
-/*****************************************************************************/
-
-void MatrixMatrixMult( double *alpha, double* A, int transA, double* B,
-    int transB, double* beta, double* C, int* rA, int *cA, int *rB, int *cB,
-    int* rC, int* cC  )
-{
-    if (transA)
-    {
-        if (transB)
-        {
-            dgemm_( "T", "T", rC, cC, cB, alpha, A, rA, B, rB, beta, C, rC );
-            /* dgemm( 'T', 'T', *rC, *cC, *cB, *alpha, A, *rA, B, *rB, *beta, C, *rC ); */
-        }
-        else
-        {
-            dgemm_( "T", "N", rC, cC, rB, alpha, A, rA, B, rB, beta, C, rC );
-            /* dgemm( 'T', 'N', *rC, *cC, *rB, *alpha, A, *rA, B, *rB, *beta, C,*rC ); */
-        }
-    }
-    else
-    {
-        if (transB)
-        {
-            dgemm_( "N", "T", rC, cC, cA, alpha, A, rA, B, rB, beta, C, rC );
-            /* dgemm( 'N', 'T', *rC, *cC, *cA, *alpha, A, *rA, B, *rB, *beta, C, *rC ); */
-        }
-        else
-        {
-            dgemm_( "N", "N", rC, cC, cA, alpha, A, rA, B, rB, beta, C, rC );
-            /* dgemm( 'N', 'N', *rC, *cC, *cA, *alpha, A, *rA, B, *rB, *beta, C, *rC ); */
-        }
-    }
-}
 
 /*****************************************************************************/
 
@@ -279,9 +236,9 @@ void LRQPCalcStats( int *n, int *m, int *p, double *Q, double *c, double *A,
 
         VectorVectorCopy( r2, b, p );
         MatrixVectorMult( &mone, A, 1, alpha, &pone, r2, n, p );
-        *dual = VectorAbsSum( r2, p );
+        *dual = dasum_(p, r2, &one ); //sum(abs(r2))
 
-    *prim   = VectorAbsSum( r1, n );
+    *prim   = dasum_(n, r1, &one ); // sum(abs(r1))
     *comp   = VectorVectorDot( alpha, zeta, n ) + VectorVectorDot( UminusAlpha, xi, n );
     cTalpha = VectorVectorDot( c, alpha, n );
     *gap = fabs( quad + cTalpha + VectorVectorDot( u, xi, n ) + VectorVectorDot( b, beta, p ) );
@@ -408,7 +365,8 @@ void LRQPCalcDx( int *n, int *m, int *p, int *method, double *Q, double *c,
         LRQPSolve( n, m, &one, method, Q, D, r5, r, M, pivN, buffMx1, P, Beta, Lambda );
         VectorVectorCopy( buffPx1, r2, p );
         MatrixVectorMult( &pone, A, 1, r, &mone, buffPx1, n, p );
-        MatrixMatrixMult( &pone, A, 1, R, 0, &zero, buffPxP, n, p, n, p, p, p );
+        
+        dgemm_("T","N", p,p,n,&pone, A, n, R, n, &zero, buffPxP, p); // buffPxP = A' * R
         MatrixCholFactorize( buffPxP, p, &info );
         MatrixCholSolve( buffPxP, p, buffPx1, &one, &info);
         VectorVectorCopy( dbeta, buffPx1, p );
