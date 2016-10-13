@@ -70,15 +70,6 @@ void PrintMatrix( char* name, double* vals, int* rows, int* cols )
 
 /*****************************************************************************/
 
-void VectorVectorCopy( double* lhs, double* rhs, int* n )
-{
-    int one=1;
-    dcopy_( n, rhs, &one, lhs, &one );
-    /* dcopy( n, rhs, &one, lhs, &one ); */
-}
-
-/*****************************************************************************/
-
 void VectorVectorMult( double* alpha, double* x, double* y, int* n )
 {
     int one=1;
@@ -171,7 +162,8 @@ void LRQPCalcStats( int *n, int *m, int *p, double *Q, double *c, double *A,
 
     dgemv_("T", n, m, &pone, Q, n, alpha, &one, &zero, w, &one ); // w = Q' * alpha
 
-    VectorVectorCopy( UminusAlpha, u, n ); // UminusAlpha = u
+
+    dcopy_(n, u, &one, UminusAlpha, &one);  // UminusAlpha = u
     VectorVectorMult( &mone, alpha, UminusAlpha, n ); // UminusAlpha = UminusAlpha + -1 * alpha
 
     for (i=0;i<(*n);i++) XiOnUminusAlpha[i] = xi[i]/UminusAlpha[i];
@@ -185,7 +177,8 @@ void LRQPCalcStats( int *n, int *m, int *p, double *Q, double *c, double *A,
         VectorVectorMult( &pone, zeta, r1, n );
         quad = VectorVectorDot( alpha, w, n );
 
-        VectorVectorCopy( r2, b, p );
+
+        dcopy_(p, b, &one, r2, &one); // r2 = b
 
         dgemv_("T", n, p, &mone, A, n, alpha, &one, &pone, r2, &one); // r2 = r2 - A' * alpha
         *dual = dasum_(p, r2, &one ); //sum(abs(r2))
@@ -317,7 +310,8 @@ void LRQPCalcDx( int *n, int *m, int *p, int *method, double *Q, double *c,
     for (i=0;i<(*n);i++) r5[i] = r1[i] + r3[i] - r4[i];
 
         LRQPSolve( n, m, &one, method, Q, D, r5, r, M, pivN, buffMx1, P, Beta, Lambda );
-        VectorVectorCopy( buffPx1, r2, p );
+
+        dcopy_(p, r2, &one, buffPx1, &one); // buffPx1 = r2
 
         dgemv_("T", n, p, &pone, A, n, r, &one, &mone, buffPx1, &one); // buffPx1 = A' * r - buffPx1
         
@@ -327,8 +321,10 @@ void LRQPCalcDx( int *n, int *m, int *p, int *method, double *Q, double *c,
 
         dpotrs_("L", p, &one, buffPxP, p, buffPx1, p, &info ); // buffPx1 = buffPxP ^-1 * buffPx1
 
-        VectorVectorCopy( dbeta, buffPx1, p );
-        VectorVectorCopy( dalpha, r , n);
+
+        dcopy_(p, buffPx1, &one, dbeta, &one);
+
+        dcopy_(n, r, &one, dalpha, &one);
 
         dgemv_("N", n,p,&mone, R, n, dbeta, &one, &pone, dalpha, &one); // dalpha = dalpha - R*dbeta
     
