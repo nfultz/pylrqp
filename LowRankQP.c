@@ -412,9 +412,6 @@ void LowRankQP( int *n, int *m, int *p, int* method, int* verbose, int* niter,
 {
     int i;
     int info = 0;
-    
-    long int start;
-    long int finish;
 
     /* Iteration Display variables */
     double mult = 0.0;
@@ -481,12 +478,9 @@ void LowRankQP( int *n, int *m, int *p, int* method, int* verbose, int* niter,
 
     for (i=0;i<(*niter);i++)
     {
-        /* start = clock(); */
         LRQPCalcStats( n, m, p, Q, c, A, b, u, alpha, beta, xi, zeta, dalpha,
             dbeta, dxi, dzeta, UminusAlpha, XiOnUminusAlpha, ZetaOnAlpha, w, r1,
             r2, D, &prim, &dual, &comp, &gap, &term, &mult, &t );
-        /* finish = clock();
-        TimeIpmCalcStats += (finish - start)/CLK_TCK; */
 
         if ( *verbose ) LRQPDisplay( i+1, &prim, &dual, &comp, &gap, &term  );
         if ( term < EPSTERM ) break;
