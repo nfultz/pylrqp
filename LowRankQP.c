@@ -135,8 +135,10 @@ void MatrixCholSolve( double* A, int* n, double* rhs, int *nrhs, int* info )
 void MatrixMatrixCopy( double* lhs, double* rhs, int* rows, int* cols )
 {
     int i;
+    int one = 1;
     int len = (*rows)*(*cols);
-    for (i=0;i<len;i++) lhs[i] = rhs[i];
+    dcopy_(&len, rhs, &one, lhs, &one);
+//    for (i=0;i<len;i++) lhs[i] = rhs[i];
 }
 
 
@@ -452,7 +454,6 @@ void LowRankQP( int *n, int *m, int *p, int* method, int* verbose, int* niter,
     double *M;
     int    *pivN;
 
-    double *buffNxM;
     double *buffMx1;
 
     double *P;
