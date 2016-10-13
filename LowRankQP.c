@@ -332,23 +332,6 @@ void LRQPSummary( int i, int niter, int method, int n, int m, double *prim,
     }
 }
 
-/*****************************************************************************/
-
-void LRQPFactorize( int *n, int *m, int *method, double *Q, double *D,
-    double *M, int* pivN, double *buffNxM, double *P, double *Beta, 
-    double *Lambda, double *LambdaTemp, double *T )
-{
-    int    info =  0;
-    double pone =  1.0;
-    double mone = -1.0;
-    double zero =  0.0;
-
-        MatrixMatrixCopy( M, Q, n, n );
-    // diag(M) = Diag(M) + D
-    for (int i=0;i<(*n);i++) M[i+i*(*n)] += D[i];
-        MatrixCholFactorize( M, n, &info );
-}
-
 /******************************************************************************
 *
 *  MATLAB CODE FOR IpmSolve
@@ -381,8 +364,6 @@ void LRQPSolve( int *n, int *m, int *nrhs, int *method, double *Q, double *D,
     double zero =  0.0;
 
     
-    long int start;
-    long int finish;
 
     MatrixMatrixCopy( sol, rhs, n, nrhs );
         MatrixCholSolve( M, n, sol, nrhs, &info );
@@ -491,6 +472,7 @@ void LowRankQP( int *n, int *m, int *p, int* method, int* verbose, int* niter,
     double* beta, double *xi, double *zeta)
 {
     int i;
+    int info = 0;
     
     long int start;
     long int finish;
@@ -570,8 +552,12 @@ void LowRankQP( int *n, int *m, int *p, int* method, int* verbose, int* niter,
         if ( *verbose ) LRQPDisplay( i+1, &prim, &dual, &comp, &gap, &term  );
         if ( term < EPSTERM ) break;
 
-        LRQPFactorize( n, m, method, Q, D, M, pivN, buffNxM, P, Beta, Lambda,
-            LambdaTemp, T );
+        //LRQPFactorize( n, m, method, Q, D, M, pivN, buffNxM, P, Beta, Lambda,
+        //    LambdaTemp, T );
+        MatrixMatrixCopy( M, Q, n, n );
+        // diag(M) = Diag(M) + D
+        for (int i=0;i<(*n);i++) M[i+i*(*n)] += D[i];
+        MatrixCholFactorize( M, n, &info );
 
         LRQPCalcDx( n, m, p, method, Q, c, A, b, u, alpha, beta, xi, zeta,
             dalpha, dbeta, dxi, dzeta, UminusAlpha, ZetaOnAlpha, 
