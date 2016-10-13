@@ -239,7 +239,7 @@ void LRQPCalcDx( int *n, int *m, int *p, int *method, double *Q, double *c,
     double *A, double *b, double * u, double *alpha, double* beta, double *xi,
     double *zeta, double *dalpha, double* dbeta, double *dxi, double *dzeta,
     double *UminusAlpha, double *ZetaOnAlpha, double *XiOnUminusAlpha,
-    double *buffMxP, double* buffPxP, double *buffPx1,
+    double* buffPxP, double *buffPx1,
     double *R, double *r, double *r1, double* r2, double *r3,
     double *r4, double* r5, double *D, double *M, double *t, int predcorr)
 {
@@ -372,7 +372,6 @@ void LowRankQP( int *n, int *m, int *p, int* method, int* verbose, int* niter,
     double *R  = (double *) calloc( (*n)*(*p), sizeof(double) );;
 
     /* Various Buffers */
-    double *buffMxP = (double *) calloc( (*m)*(*p), sizeof(double) );;
     double *buffPxP = (double *) calloc( (*p)*(*p), sizeof(double) );;
     double *buffPx1 = (double *) calloc( (*p), sizeof(double) );;
 
@@ -406,12 +405,12 @@ void LowRankQP( int *n, int *m, int *p, int* method, int* verbose, int* niter,
 
         LRQPCalcDx( n, m, p, method, Q, c, A, b, u, alpha, beta, xi, zeta,
             dalpha, dbeta, dxi, dzeta, UminusAlpha, ZetaOnAlpha, 
-            XiOnUminusAlpha, buffMxP, buffPxP, buffPx1, R, r, r1,
+            XiOnUminusAlpha, buffPxP, buffPx1, R, r, r1,
             r2, r3, r4, r5, D, M, &t, PRED);
 
         LRQPCalcDx( n, m, p, method, Q, c, A, b, u, alpha, beta, xi, zeta,
             dalpha, dbeta, dxi, dzeta, UminusAlpha, ZetaOnAlpha,
-            XiOnUminusAlpha, buffMxP, buffPxP, buffPx1, R, r, r1,
+            XiOnUminusAlpha, buffPxP, buffPx1, R, r, r1,
             r2, r3, r4, r5, D, M, &t, CORR);
 
         LRQPStep( n, p, alpha, beta, xi, zeta, dalpha, dbeta, dxi, dzeta,
@@ -429,7 +428,6 @@ void LowRankQP( int *n, int *m, int *p, int* method, int* verbose, int* niter,
         free( dbeta );
         free( r2 );
         free( R );
-        free( buffMxP );
         free( buffPxP );
         free( buffPx1 );
 
