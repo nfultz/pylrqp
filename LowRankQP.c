@@ -303,9 +303,11 @@ void LRQPSolve( int *n, int *m, int *nrhs, int *method, double *Q, double *D,
     double mone = -1.0;
     double zero =  0.0;
 
+    int len = *n * *nrhs;
     
 
-    MatrixMatrixCopy( sol, rhs, n, nrhs );
+    //MatrixMatrixCopy( sol, rhs, n, nrhs );
+    dcopy_(&len, rhs, &one, sol, &one); // copy rhs to sol
         MatrixCholSolve( M, n, sol, nrhs, &info );
 }
 
@@ -414,6 +416,8 @@ void LowRankQP( int *n, int *m, int *p, int* method, int* verbose, int* niter,
 {
     int i;
     int info = 0;
+    int n2 = *n * *n;
+    int one = 1;
 
     /* Iteration Display variables */
     double mult = 0.0;
@@ -488,7 +492,8 @@ void LowRankQP( int *n, int *m, int *p, int* method, int* verbose, int* niter,
 
         //LRQPFactorize( n, m, method, Q, D, M, pivN, buffNxM, P, Beta, Lambda,
         //    LambdaTemp, T );
-        MatrixMatrixCopy( M, Q, n, n );
+        //MatrixMatrixCopy( M, Q, n, n );
+        dcopy_(&n2, Q, &one, M, &one); // copy Q into M
         // diag(M) = Diag(M) + D
         for (int i=0;i<(*n);i++) M[i+i*(*n)] += D[i];
         MatrixCholFactorize( M, n, &info );
