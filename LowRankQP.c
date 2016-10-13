@@ -235,7 +235,7 @@ void LRQPSummary( int i, int niter, double *prim,
 *
 ******************************************************************************/
 
-void LRQPCalcDx( int *n, int *m, int *p, int *method, double *Q, double *c,
+void LRQPCalcDx( int *n, int *p, double *Q, double *c,
     double *A, double *b, double * u, double *alpha, double* beta, double *xi,
     double *zeta, double *dalpha, double* dbeta, double *dxi, double *dzeta,
     double *UminusAlpha, double *ZetaOnAlpha, double *XiOnUminusAlpha,
@@ -403,12 +403,12 @@ void LowRankQP( int *n, int *m, int *p, int* method, int* verbose, int* niter,
 
         dpotrf_( "L", n, M, n, &info ); // Cholesky factor of M
 
-        LRQPCalcDx( n, m, p, method, Q, c, A, b, u, alpha, beta, xi, zeta,
+        LRQPCalcDx( n, p, Q, c, A, b, u, alpha, beta, xi, zeta,
             dalpha, dbeta, dxi, dzeta, UminusAlpha, ZetaOnAlpha, 
             XiOnUminusAlpha, buffPxP, buffPx1, R, r, r1,
             r2, r3, r4, r5, D, M, &t, PRED);
 
-        LRQPCalcDx( n, m, p, method, Q, c, A, b, u, alpha, beta, xi, zeta,
+        LRQPCalcDx( n, p, Q, c, A, b, u, alpha, beta, xi, zeta,
             dalpha, dbeta, dxi, dzeta, UminusAlpha, ZetaOnAlpha,
             XiOnUminusAlpha, buffPxP, buffPx1, R, r, r1,
             r2, r3, r4, r5, D, M, &t, CORR);
@@ -423,7 +423,7 @@ void LowRankQP( int *n, int *m, int *p, int* method, int* verbose, int* niter,
     free(dalpha);      free(dxi);             free(dzeta);
     free(UminusAlpha); free(XiOnUminusAlpha); free(ZetaOnAlpha);
     free(r1); free(r3); free(r4); free(r5);
-    free(D);  free(w);  free(r);  
+    free(D);  free(w);  free(r);
         
         free( dbeta );
         free( r2 );
