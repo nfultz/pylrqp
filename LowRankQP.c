@@ -7,10 +7,7 @@
 #define MAX(A,B) ( (A) > (B) ? (A):(B))
 #define MIN(A,B) ( (A) < (B) ? (A):(B))
 
-#define LU   1
 #define CHOL 2
-#define SMW  3
-#define PFCF 4
 
 #define PRED 1
 #define CORR 2
@@ -423,13 +420,7 @@ void LRQPSummary( int i, int niter, int method, int n, int m, double *prim,
         printf("LowRankQP FAILED TO CONVERGE\n");
         if (n==m)
         {
-            if (method==CHOL) printf("    Try increasing niter, using method=LU, or rescaling problem.\n");
-            else              printf("    Try increasing niter, or rescaling problem.\n");
-        }
-        else
-        {
-            if (method==SMW)  printf("    Try increasing niter, using method=PFCF, using method=LU, or rescaling problem.\n");
-            else              printf("    Try increasing niter, or rescaling problem.\n");
+            if (method==CHOL) printf("    Try increasing niter, or rescaling problem.\n");
         }
     }
     else
@@ -544,27 +535,12 @@ void LRQPFactorize( int *n, int *m, int *method, double *Q, double *D,
     double mone = -1.0;
     double zero =  0.0;
 
-    if ((*method==LU)||(*method==CHOL))
+    if (*method==CHOL)
     {
         if ((*n)==(*m)) MatrixMatrixCopy( M, Q, n, n );
         else            MatrixMatrixMult( &pone, Q, 0, Q, 1, &zero, M, n, m, n, m, n, n );
         MatrixMatrixPlusDiag( M, D, n );
-        if (*method==LU)        MatrixLUFactorize( M, n, pivN, &info );
-        else if (*method==CHOL) MatrixCholFactorize( M, n, &info );
-    }
-    else
-    {
-        if (*method==SMW)
-        {
-            MatrixMatrixDiagSolve( D, Q, buffNxM, n, m );
-            MatrixMatrixMult( &pone, Q, 1, buffNxM, 0, &zero, M, n, m, n, m, m, m );
-            MatrixConstantPlusDiag( M, pone, m );
-            MatrixCholFactorize( M, m, &info );
-        }
-        else if (*method==PFCF)
-        {
-            PfcfFactorize( n, m, Q, D, P, Beta, Lambda, LambdaTemp, T );
-        }
+        if (*method==CHOL) MatrixCholFactorize( M, n, &info );
     }
 }
 
@@ -604,31 +580,9 @@ void LRQPSolve( int *n, int *m, int *nrhs, int *method, double *Q, double *D,
     long int finish;
 
     MatrixMatrixCopy( sol, rhs, n, nrhs );
-    if (*method==LU)
-    {
-        MatrixLUSolve( M, n, pivN, sol, nrhs );
-    }
-    else if (*method==CHOL)
+    if (*method==CHOL)
     {
         MatrixCholSolve( M, n, sol, nrhs, &info );
-    }
-    else if (*method==SMW)
-    {
-        MatrixMatrixDiagSolve( D, sol, sol, n, nrhs );
-        MatrixMatrixMult( &pone, Q, 1, sol, 0, &zero, buffMxP, n, m, n, nrhs, m, nrhs );
-        MatrixCholSolve( M, m, buffMxP, nrhs, &info );
-        MatrixMatrixMult( &mone, Q, 0, buffMxP, 0, &zero, sol, n, m, m, nrhs, n,nrhs );
-        MatrixMatrixPlus( sol, rhs, sol, n, nrhs );
-        MatrixMatrixDiagSolve( D, sol, sol, n, nrhs );
-    }
-    else if (*method==PFCF)
-    {
-        for (i=0;i<(*nrhs);i++)
-        {
-            for (j=0;j<(*m);j++) PfcfSolve( n, P+(j*(*n)), Beta+(j*(*n)), sol+(i*(*n)), 0);
-            MatrixMatrixDiagSolve( Lambda, sol+(i*(*n)), sol+(i*(*n)), n, &one );
-            for (j=((*m)-1);j>=0;j--) PfcfSolve( n, P+(j*(*n)), Beta+(j*(*n)),sol+(i*(*n)), 1);
-        }
     }
 }
 
@@ -804,27 +758,10 @@ void LowRankQP( int *n, int *m, int *p, int* method, int* verbose, int* niter,
         buffPx1 = (double *) calloc( (*p), sizeof(double) );
     }
 
-    if ((*method==LU)||(*method==CHOL))
+    if (*method==CHOL)
     {
         M    = (double *) calloc( (*n)*(*n), sizeof(double) );
         pivN = (int *) calloc( *n, sizeof(int) );
-    }
-    else
-    {
-        if (*method==SMW)
-        {
-            buffNxM  = (double *) calloc( (*n)*(*m), sizeof(double) );
-            M        = (double *) calloc( (*m)*(*m), sizeof(double) );
-            buffMx1  = (double *) calloc( (*m), sizeof(double) );
-        }
-        else if (*method==PFCF)
-        {
-            P          = (double *) calloc( (*n)*(*m), sizeof(double) );
-            Beta       = (double *) calloc( (*n)*(*m), sizeof(double) );
-            Lambda     = (double *) calloc( (*n), sizeof(double) );
-            LambdaTemp = (double *) calloc( (*n), sizeof(double) );
-            T          = (double *) calloc(1+(*n), sizeof(double) );
-        }
     }
 
     /* Main Loop */
@@ -878,27 +815,10 @@ void LowRankQP( int *n, int *m, int *p, int* method, int* verbose, int* niter,
         free( buffPx1 );
     }
 
-    if ((*method==LU)||(*method==CHOL))
+    if (*method==CHOL)
     {
         free( M );
         free( pivN );
-    }
-    else
-    {
-        if (*method==SMW)
-        {
-            free( buffMx1 );
-            free( buffNxM );
-            free( M  );
-        }
-        else if (*method==PFCF)
-        {
-            free( P );
-            free( Beta );
-            free( Lambda );
-            free( LambdaTemp );
-            free( T );
-        }
     }
 }
 
