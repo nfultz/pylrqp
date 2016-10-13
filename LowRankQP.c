@@ -79,13 +79,6 @@ void VectorVectorCopy( double* lhs, double* rhs, int* n )
 
 /*****************************************************************************/
 
-void VectorVectorDivide( double* top, double* bot, double* res, int* n )
-{
-    int i;
-    for (i=0;i<(*n);i++) res[i] = top[i]/bot[i];
-}
-/*****************************************************************************/
-
 void VectorVectorMult( double* alpha, double* x, double* y, int* n )
 {
     int one=1;
@@ -224,8 +217,8 @@ void LRQPCalcStats( int *n, int *m, int *p, double *Q, double *c, double *A,
     VectorVectorCopy( UminusAlpha, u, n ); // UminusAlpha = u
     VectorVectorMult( &mone, alpha, UminusAlpha, n ); // UminusAlpha = UminusAlpha + -1 * alpha
 
-    VectorVectorDivide( xi, UminusAlpha, XiOnUminusAlpha, n );
-    VectorVectorDivide( zeta, alpha, ZetaOnAlpha, n );
+    for (i=0;i<(*n);i++) XiOnUminusAlpha[i] = xi[i]/UminusAlpha[i];
+    for (i=0;i<(*n);i++) ZetaOnAlpha[i] = zeta[i]/alpha[i];
 
         MatrixVectorMult( &mone, A, 0, beta, &zero, r1, n, p );
         VectorVectorMult( &mone, w,  r1, n );
