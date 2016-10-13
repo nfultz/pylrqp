@@ -128,22 +128,6 @@ double VectorVectorDot( double* x, double* y, int* n )
 
 /*****************************************************************************/
 
-void MatrixMatrixDiagSolve( double* D, double* A, double* res, int* rows, int*
-cols )
-{
-    int i,j;
-    int n = (*rows);
-    int m = (*cols);
-    double temp;
-    for (i=0;i<n;i++)
-    {
-        temp = D[i];
-        for (j=0;j<m;j++) res[i + j*n] = A[i + j*n] / temp;
-    }
-}
-
-/*****************************************************************************/
-
 void MatrixVectorMult( double* alpha, double* A, int trans, double* x, double*
 beta, double* b, int* rows, int* cols )
 {
@@ -158,14 +142,6 @@ beta, double* b, int* rows, int* cols )
         dgemv_("N", rows, cols, alpha, A, rows, x, &one, beta, b, &one );
         /* dgemv('N', *rows, *cols, *alpha, A, *rows, x, one, *beta, b, one ); */
     }
-}
-
-/*****************************************************************************/
-
-void MatrixConstantPlusDiag( double* A, double c, int* n )
-{
-    int i;
-    for (i=0;i<(*n);i++) A[i+i*(*n)] += c;
 }
 
 /*****************************************************************************/
@@ -203,15 +179,6 @@ void MatrixMatrixCopy( double* lhs, double* rhs, int* rows, int* cols )
 }
 
 
-
-/*****************************************************************************/
-
-void MatrixConstantSet( double* A, double c, int* rows, int* cols)
-{
-    int i;
-    int len = (*rows)*(*cols);
-    for (i=0;i<len;i++) A[i] = c;
-}
 
 /*****************************************************************************/
 
