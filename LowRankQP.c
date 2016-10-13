@@ -215,26 +215,9 @@ void LRQPSummary( int i, int niter, int method, int n, int m, double *prim,
 *        z   = info.M'\rhs;
 *        sol = info.M\z;
 *
+*    dcopy_(&len, rhs, &one, sol, &one); // copy rhs to sol
+*    dpotrs_("L", n, nrhs, M, n, sol, n, &info ); // sol = M^-1 * sol
 ******************************************************************************/
-
-void LRQPSolve( int *n, int *m, int *nrhs, int *method, double *Q, double *D,
-    double *rhs, double *sol, double *M, int* pivN, double *buffMxP, double *P,
-    double *Beta, double *Lambda )
-{
-    int i, j;
-    int info    = 0;
-    int one     = 1;
-    double pone =  1.0;
-    double mone = -1.0;
-    double zero =  0.0;
-
-    int len = *n * *nrhs;
-    
-
-    dcopy_(&len, rhs, &one, sol, &one); // copy rhs to sol
-
-    dpotrs_("L", n, nrhs, M, n, sol, n, &info ); // sol = M^-1 * sol
-}
 
 /******************************************************************************
 *
@@ -263,6 +246,7 @@ void LRQPCalcDx( int *n, int *m, int *p, int *method, double *Q, double *c,
 {
 
     int i, j;
+    int np = *n * *p;
     int    info = 0;
     int    one  = 1;
     double pone =  1.0;
@@ -270,7 +254,9 @@ void LRQPCalcDx( int *n, int *m, int *p, int *method, double *Q, double *c,
     double zero =  0.0;
     if (predcorr==PRED)
     {
-        LRQPSolve( n, m, p, method, Q, D, A, R, M, pivN, buffMxP, P, Beta, Lambda );
+        //LRQPSolve( n, m, p, method, Q, D, A, R, M, pivN, buffMxP, P, Beta, Lambda );
+        dcopy_(&np, A, &one, R, &one); // copy A to R
+        dpotrs_("L", n, p, M, n, R, n, &info ); // R = M^-1 * R
     }
     for (i=0;i<(*n);i++)
     {
@@ -284,7 +270,9 @@ void LRQPCalcDx( int *n, int *m, int *p, int *method, double *Q, double *c,
     }
     for (i=0;i<(*n);i++) r5[i] = r1[i] + r3[i] - r4[i];
 
-        LRQPSolve( n, m, &one, method, Q, D, r5, r, M, pivN, buffMx1, P, Beta, Lambda );
+        //LRQPSolve( n, m, &one, method, Q, D, r5, r, M, pivN, buffMx1, P, Beta, Lambda );
+        dcopy_(n, r5, &one, r, &one); // copy r5 to r
+        dpotrs_("L", n, &one, M, n, r, n, &info ); // r = M^-1 * r
 
         dcopy_(p, r2, &one, buffPx1, &one); // buffPx1 = r2
 
