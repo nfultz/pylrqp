@@ -223,7 +223,7 @@ void LRQPInitPoint( int *n, int *m, int *p, double *Q, double *c, double *A,
     double pone =  1.0;
     double mone = -1.0;
     double zero =  0.0;
-    for (i=0;i<(*n);i++) alpha[i] = MIN(EPSINIT,u[i]*EPSINIT);
+    for (i=0;i<(*n);i++) alpha[i] = u[i] > 1 ? EPSINIT : u[i] * EPSINIT;
     for (i=0;i<(*p);i++) beta[i]  = 0.0;
     MatrixVectorMult( &pone, Q, 1, alpha, &zero, w, n, m );
     for (i=0;i<(*n);i++) temp[i] += -w[i];
