@@ -212,19 +212,8 @@ void LRQPSummary( int i, int niter, int method, int n, int m, double *prim,
 *
 *  MATLAB CODE FOR IpmSolve
 *
-*    if (strcmp(info.method,'FULL'))
-*        sol = info.M \ rhs;
-*    elseif (strcmp(info.method,'CHOL'))
 *        z   = info.M'\rhs;
 *        sol = info.M\z;
-*    elseif (strcmp(info.method,'SMW'))
-*        z   = D \ rhs;
-*        t   = info.M'\(Q'*z);
-*        t   = info.M \ t;
-*        sol = z - D \ (Q*t);
-*    elseif (strcmp(info.method,'PFCF'))
-*        PfcfSolve()
-*    end;
 *
 ******************************************************************************/
 
