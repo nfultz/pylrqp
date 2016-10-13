@@ -70,15 +70,6 @@ void PrintMatrix( char* name, double* vals, int* rows, int* cols )
 
 /*****************************************************************************/
 
-double VectorVectorDot( double* x, double* y, int* n )
-{
-    int one=1;
-    return ddot_( n, x, &one, y, &one );
-    /* return ddot( n, x, &one, y, &one ); */
-}
-
-/*****************************************************************************/
-
 void LRQPHeader()
 {
     printf("ITER  PRIM            DUAL            COMP            GAP           TERM\n");
@@ -166,7 +157,8 @@ void LRQPCalcStats( int *n, int *m, int *p, double *Q, double *c, double *A,
         daxpy_(n, &mone, c, &one, r1, &one ); // r1= r1 - c
         daxpy_(n, &mone, xi, &one, r1, &one ); // r1= r1 - xi
         daxpy_(n, &pone, zeta, &one, r1, &one ); // r1= r1 + zeta
-        quad = VectorVectorDot( alpha, w, n );
+
+        quad = ddot_(n, alpha, &one, w, &one );
 
 
         dcopy_(p, b, &one, r2, &one); // r2 = b
@@ -175,9 +167,12 @@ void LRQPCalcStats( int *n, int *m, int *p, double *Q, double *c, double *A,
         *dual = dasum_(p, r2, &one ); //sum(abs(r2))
 
     *prim   = dasum_(n, r1, &one ); // sum(abs(r1))
-    *comp   = VectorVectorDot( alpha, zeta, n ) + VectorVectorDot( UminusAlpha, xi, n );
-    cTalpha = VectorVectorDot( c, alpha, n );
-    *gap = fabs( quad + cTalpha + VectorVectorDot( u, xi, n ) + VectorVectorDot( b, beta, p ) );
+
+    *comp   = ddot_(n,  alpha, &one, zeta,  &one ) + ddot_(n, UminusAlpha, &one, xi,  &one );
+
+    cTalpha = ddot_(n, c, &one, alpha, &one );
+
+    *gap = fabs( quad + cTalpha + ddot_(n, u, &one, xi, &one ) + ddot_(p, b, &one, beta, &one ) );
     *term   = *comp / ( fabs( 0.5*quad + cTalpha) + 1.0);
     temp    = (1.0 - *mult + EPSIPM)/(10.0 + *mult);
     *t      = *comp*(temp*temp)/(2*(*n));
