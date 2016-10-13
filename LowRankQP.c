@@ -322,25 +322,22 @@ void LRQPCalcStats( int *n, int *m, int *p, double *Q, double *c, double *A,
     VectorVectorMinus( u, alpha, UminusAlpha, n );
     VectorVectorDivide( xi, UminusAlpha, XiOnUminusAlpha, n );
     VectorVectorDivide( zeta, alpha, ZetaOnAlpha, n );
-    if ( (*n)==(*m) )
-    {   
-        if (*p) MatrixVectorMult( &mone, A, 0, beta, &zero, r1, n, p );
+
+        MatrixVectorMult( &mone, A, 0, beta, &zero, r1, n, p );
         VectorVectorMult( &mone, w,  r1, n );
         VectorVectorMult( &mone, c,  r1, n );
         VectorVectorMult( &mone, xi, r1, n );
         VectorVectorMult( &pone, zeta, r1, n );
         quad = VectorVectorDot( alpha, w, n );
-    }
-    if (*p)
-    {
+
         VectorVectorCopy( r2, b, p );
         MatrixVectorMult( &mone, A, 1, alpha, &pone, r2, n, p );
         *dual = VectorAbsSum( r2, p );
-    }
+
     *prim   = VectorAbsSum( r1, n );
     *comp   = VectorVectorDot( alpha, zeta, n ) + VectorVectorDot( UminusAlpha, xi, n );
     cTalpha = VectorVectorDot( c, alpha, n );
-    if (*p) *gap = fabs( quad + cTalpha + VectorVectorDot( u, xi, n ) + VectorVectorDot( b, beta, p ) );
+    *gap = fabs( quad + cTalpha + VectorVectorDot( u, xi, n ) + VectorVectorDot( b, beta, p ) );
     *term   = *comp / ( fabs( 0.5*quad + cTalpha) + 1.0);
     temp    = (1.0 - *mult + EPSIPM)/(10.0 + *mult);
     *t      = *comp*(temp*temp)/(2*(*n));
@@ -363,10 +360,7 @@ void LRQPSummary( int i, int niter, int method, int n, int m, double *prim,
     if (i==niter)
     {
         printf("LowRankQP FAILED TO CONVERGE\n");
-        if (n==m)
-        {
-            if (method==CHOL) printf("    Try increasing niter, or rescaling problem.\n");
-        }
+        printf("    Try increasing niter, or rescaling problem.\n");
     }
     else
     {
@@ -390,12 +384,9 @@ void LRQPFactorize( int *n, int *m, int *method, double *Q, double *D,
     double mone = -1.0;
     double zero =  0.0;
 
-    if (*method==CHOL)
-    {
-        if ((*n)==(*m)) MatrixMatrixCopy( M, Q, n, n );
+        MatrixMatrixCopy( M, Q, n, n );
         MatrixMatrixPlusDiag( M, D, n );
-        if (*method==CHOL) MatrixCholFactorize( M, n, &info );
-    }
+        MatrixCholFactorize( M, n, &info );
 }
 
 /******************************************************************************
@@ -434,10 +425,7 @@ void LRQPSolve( int *n, int *m, int *nrhs, int *method, double *Q, double *D,
     long int finish;
 
     MatrixMatrixCopy( sol, rhs, n, nrhs );
-    if (*method==CHOL)
-    {
         MatrixCholSolve( M, n, sol, nrhs, &info );
-    }
 }
 
 /******************************************************************************
@@ -488,8 +476,6 @@ void LRQPCalcDx( int *n, int *m, int *p, int *method, double *Q, double *c,
     }
     for (i=0;i<(*n);i++) r5[i] = r1[i] + r3[i] - r4[i];
 
-    if (*p)
-    {
         LRQPSolve( n, m, &one, method, Q, D, r5, r, M, pivN, buffMx1, P, Beta, Lambda );
         VectorVectorCopy( buffPx1, r2, p );
         MatrixVectorMult( &pone, A, 1, r, &mone, buffPx1, n, p );
@@ -499,7 +485,7 @@ void LRQPCalcDx( int *n, int *m, int *p, int *method, double *Q, double *c,
         VectorVectorCopy( dbeta, buffPx1, p );
         VectorVectorCopy( dalpha, r , n);
         MatrixVectorMult( &mone, R, 0, dbeta, &pone, dalpha, n, p );
-    }
+    
     for (i=0;i<(*n);i++) dzeta[i] = r3[i] - (ZetaOnAlpha[i] * dalpha[i]);
     for (i=0;i<(*n);i++) dxi[i]   = r4[i] + (XiOnUminusAlpha[i] * dalpha[i]);
 
@@ -533,7 +519,7 @@ void LRQPStep( int *n, int *p, double *alpha, double* beta, double *xi,
     }
     *mult *= 0.99;
     VectorVectorMult( mult, dalpha, alpha, n );
-    if (*p) VectorVectorMult( mult, dbeta,  beta,  p );
+    VectorVectorMult( mult, dbeta,  beta,  p );
     VectorVectorMult( mult, dxi,    xi,    n );
     VectorVectorMult( mult, dzeta,  zeta,  n );
 }
@@ -598,21 +584,15 @@ void LowRankQP( int *n, int *m, int *p, int* method, int* verbose, int* niter,
     double *T;
 
     /* Vectors to be created if p!=0 */
-    if (*p)
-    {
         dbeta   = (double *) calloc( (*p), sizeof(double) );
         r2      = (double *) calloc( (*p), sizeof(double) );
         R       = (double *) calloc( (*n)*(*p), sizeof(double) );
         buffMxP = (double *) calloc( (*m)*(*p), sizeof(double) );
         buffPxP = (double *) calloc( (*p)*(*p), sizeof(double) );
         buffPx1 = (double *) calloc( (*p), sizeof(double) );
-    }
 
-    if (*method==CHOL)
-    {
         M    = (double *) calloc( (*n)*(*n), sizeof(double) );
         pivN = (int *) calloc( *n, sizeof(int) );
-    }
 
     /* Main Loop */
     if ( *verbose ) LRQPHeader();
@@ -655,21 +635,15 @@ void LowRankQP( int *n, int *m, int *p, int* method, int* verbose, int* niter,
     free(r1); free(r3); free(r4); free(r5);
     free(D);  free(w);  free(r);  
         
-    if (*p)
-    {
         free( dbeta );
         free( r2 );
         free( R );
         free( buffMxP );
         free( buffPxP );
         free( buffPx1 );
-    }
 
-    if (*method==CHOL)
-    {
         free( M );
         free( pivN );
-    }
 }
 
 int main(){
