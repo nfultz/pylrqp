@@ -375,16 +375,6 @@ void LRQPCalcStats( int *n, int *m, int *p, double *Q, double *c, double *A,
         VectorVectorMult( &pone, zeta, r1, n );
         quad = VectorVectorDot( alpha, w, n );
     }
-    else
-    {
-        if (*p) MatrixVectorMult( &mone, A, 0, beta, &zero, r1, n, p );
-        else    MatrixConstantSet( r1, 0.0, n, &one );
-        MatrixVectorMult( &mone, Q, 0, w, &pone, r1, n, m );
-        VectorVectorMult( &mone, c,  r1, n );
-        VectorVectorMult( &mone, xi, r1, n );
-        VectorVectorMult( &pone, zeta, r1, n );
-        quad = VectorVectorDot( w, w, m );
-    }
     if (*p)
     {
         VectorVectorCopy( r2, b, p );
@@ -538,7 +528,6 @@ void LRQPFactorize( int *n, int *m, int *method, double *Q, double *D,
     if (*method==CHOL)
     {
         if ((*n)==(*m)) MatrixMatrixCopy( M, Q, n, n );
-        else            MatrixMatrixMult( &pone, Q, 0, Q, 1, &zero, M, n, m, n, m, n, n );
         MatrixMatrixPlusDiag( M, D, n );
         if (*method==CHOL) MatrixCholFactorize( M, n, &info );
     }
