@@ -115,14 +115,6 @@ beta, double* b, int* rows, int* cols )
 
 /*****************************************************************************/
 
-void MatrixCholFactorize( double* A, int* n, int* info )
-{
-    dpotrf_( "L", n, A, n, info );
-    /* dpotrf( 'L', *n, A, *n, info ); */
-}
-
-/*****************************************************************************/
-
 void LRQPHeader()
 {
     printf("ITER  PRIM            DUAL            COMP            GAP           TERM\n");
@@ -342,7 +334,8 @@ void LRQPCalcDx( int *n, int *m, int *p, int *method, double *Q, double *c,
         MatrixVectorMult( &pone, A, 1, r, &mone, buffPx1, n, p );
         
         dgemm_("T","N", p,p,n,&pone, A, n, R, n, &zero, buffPxP, p); // buffPxP = A' * R
-        MatrixCholFactorize( buffPxP, p, &info );
+
+        dpotrf_( "L", p, buffPxP, p, &info ); // Cholesky Factor of buffPxP
 
         dpotrs_("L", p, &one, buffPxP, p, buffPx1, p, &info ); // buffPx1 = buffPxP ^-1 * buffPx1
 
@@ -476,7 +469,8 @@ void LowRankQP( int *n, int *m, int *p, int* method, int* verbose, int* niter,
         dcopy_(&n2, Q, &one, M, &one); // copy Q into M
         // diag(M) = Diag(M) + D
         for (int i=0;i<(*n);i++) M[i+i*(*n)] += D[i];
-        MatrixCholFactorize( M, n, &info );
+
+        dpotrf_( "L", n, M, n, &info ); // Cholesky factor of M
 
         LRQPCalcDx( n, m, p, method, Q, c, A, b, u, alpha, beta, xi, zeta,
             dalpha, dbeta, dxi, dzeta, UminusAlpha, ZetaOnAlpha, 
