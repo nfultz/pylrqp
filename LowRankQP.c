@@ -239,10 +239,9 @@ void LRQPCalcDx( int *n, int *m, int *p, int *method, double *Q, double *c,
     double *A, double *b, double * u, double *alpha, double* beta, double *xi,
     double *zeta, double *dalpha, double* dbeta, double *dxi, double *dzeta,
     double *UminusAlpha, double *ZetaOnAlpha, double *XiOnUminusAlpha,
-    double *buffMxP, double *buffMx1, double* buffPxP, double *buffPx1,
+    double *buffMxP, double* buffPxP, double *buffPx1,
     int *pivN, double *R, double *r, double *r1, double* r2, double *r3,
-    double *r4, double* r5, double *D, double *M, double *t, double *P,
-    double *Beta, double *Lambda, double *LambdaTemp, double *T, int predcorr)
+    double *r4, double* r5, double *D, double *M, double *t, int predcorr)
 {
 
     int i, j;
@@ -380,13 +379,6 @@ void LowRankQP( int *n, int *m, int *p, int* method, int* verbose, int* niter,
     double *M = (double *) calloc( (*n)*(*n), sizeof(double) );;
     int    *pivN = (int *) calloc( *n, sizeof(int) );;
 
-    double *buffMx1;
-
-    double *P;
-    double *Beta;
-    double *Lambda;
-    double *LambdaTemp;
-    double *T;
 
     /* Vectors to be created if p!=0 */
 
@@ -408,20 +400,20 @@ void LowRankQP( int *n, int *m, int *p, int* method, int* verbose, int* niter,
         //    LambdaTemp, T );
         //MatrixMatrixCopy( M, Q, n, n );
         dcopy_(&n2, Q, &one, M, &one); // copy Q into M
-        // diag(M) = Diag(M) + D
-        for (int i=0;i<(*n);i++) M[i+i*(*n)] += D[i];
+        
+        for (int i=0;i<(*n);i++) M[i+i*(*n)] += D[i];// diag(M) = Diag(M) + D
 
         dpotrf_( "L", n, M, n, &info ); // Cholesky factor of M
 
         LRQPCalcDx( n, m, p, method, Q, c, A, b, u, alpha, beta, xi, zeta,
             dalpha, dbeta, dxi, dzeta, UminusAlpha, ZetaOnAlpha, 
-            XiOnUminusAlpha, buffMxP, buffMx1, buffPxP, buffPx1, pivN, R, r, r1,
-            r2, r3, r4, r5, D, M, &t, P, Beta, Lambda, LambdaTemp, T, PRED);
+            XiOnUminusAlpha, buffMxP, buffPxP, buffPx1, pivN, R, r, r1,
+            r2, r3, r4, r5, D, M, &t, PRED);
 
         LRQPCalcDx( n, m, p, method, Q, c, A, b, u, alpha, beta, xi, zeta,
             dalpha, dbeta, dxi, dzeta, UminusAlpha, ZetaOnAlpha,
-            XiOnUminusAlpha, buffMxP, buffMx1, buffPxP, buffPx1, pivN, R, r, r1,
-            r2, r3, r4, r5, D, M, &t, P, Beta, Lambda, LambdaTemp, T, CORR);
+            XiOnUminusAlpha, buffMxP, buffPxP, buffPx1, pivN, R, r, r1,
+            r2, r3, r4, r5, D, M, &t, CORR);
 
         LRQPStep( n, p, alpha, beta, xi, zeta, dalpha, dbeta, dxi, dzeta,
             UminusAlpha, &mult );
