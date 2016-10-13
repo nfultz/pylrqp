@@ -2,19 +2,9 @@
 #include <math.h>
 #include <stdio.h>
 #include <time.h>
+#include <stdlib.h>
 
-#include <R.h>
-#include <R_ext/Lapack.h>
-/*
-#include "mkl_lapack.h"
-#include "mkl_blas.h"
-*/
-
-#ifdef _MKL_LAPACK_H_
-    #define CTOF(x) x
-#else
-    #define CTOF(x) x ## _
-#endif
+#define CTOF(x) x ## _
 
 #define MAX(A,B) ( (A) > (B) ? (A):(B))
 #define MIN(A,B) ( (A) < (B) ? (A):(B))
@@ -26,8 +16,43 @@
 
 #define PRED 1
 #define CORR 2
+/**** BLAS ****/
+extern double dasum_(int*, double*, int*);
 
-/*****************************************************************************/
+extern void daxpy_(const int *n, const double *alpha,
+       const double *dx, const int *incx,
+                                                                    double *dy, const int *incy);
+extern void   dcopy_(const int *n, const double *dx, const int *incx,
+                                      double *dy, const int *incy);
+extern double ddot_(const int *n, const double *dx, const int *incx, const
+        double *dy, const int *incy);
+
+
+extern void   dgemv_(const char *trans, const int *m, const int *n, const
+        double *alpha, const double *a, const int *lda, const double *x, const
+        int *incx, const double *beta, double *y, const int *incy);
+
+extern void   dgemm_(const char *transa, const char *transb, const int *m,
+        const int *n, const int *k, const double *alpha, const double *a, const
+        int *lda, const double *b, const int *ldb, const double *beta, double
+        *c, const int *ldc);
+
+/**** LAPACK ****/
+extern void dgetrf_(const int* m, const int* n, double* a, const int* lda,
+                 int* ipiv, int* info);
+extern void dgetrs_(const char* trans, const int* n, const int* nrhs,
+                 const double* a, const int* lda, const int* ipiv,
+                         double* b, const int* ldb, int* info);
+
+
+extern void dpotrf_(const char* uplo, const int* n,
+                 double* a, const int* lda, int* info);
+extern void dpotrs_(const char* uplo, const int* n,
+                 const int* nrhs, const double* a, const int* lda, double* b,
+                 const int* ldb, int* info);
+
+
+/*****************************************************************************n
 
 /* Global Variables */
 #define EPSTERM   5.0E-11
@@ -41,17 +66,17 @@
 void PrintMatrix( char* name, double* vals, int* rows, int* cols )
 {
     int i, j;
-    Rprintf("%8s = [\n", name);
+    printf("%8s = [\n", name);
 
     for (i=0;i<(*rows);i++)
     {
         for (j=0;j<(*cols);j++)
         {
-            Rprintf("%15.10e ", vals[i+j*(*rows)]);
+            printf("%15.10e ", vals[i+j*(*rows)]);
         }
-        Rprintf(";\n");
+        printf(";\n");
     }
-    Rprintf("];\n");
+    printf("];\n");
 }
 
 /*****************************************************************************/
@@ -273,7 +298,7 @@ void MatrixMatrixMult( double *alpha, double* A, int transA, double* B,
 
 void LRQPHeader()
 {
-    Rprintf("ITER  PRIM            DUAL            COMP            GAP           TERM\n");
+    printf("ITER  PRIM            DUAL            COMP            GAP           TERM\n");
 }
 
 /*****************************************************************************/
@@ -387,7 +412,7 @@ void LRQPCalcStats( int *n, int *m, int *p, double *Q, double *c, double *A,
 void LRQPDisplay( int i, double *prim, double *dual, double *comp, double *gap,
                   double *term )
 {
-    Rprintf("%3d %15.7e %15.7e %15.7e %15.7e %15.7e \n", i, *prim, *dual, *comp, *gap, *term );
+    printf("%3d %15.7e %15.7e %15.7e %15.7e %15.7e \n", i, *prim, *dual, *comp, *gap, *term );
 }
 
 /*****************************************************************************/
@@ -397,26 +422,26 @@ void LRQPSummary( int i, int niter, int method, int n, int m, double *prim,
 {
     if (i==niter)
     {
-        Rprintf("LowRankQP FAILED TO CONVERGE\n");
+        printf("LowRankQP FAILED TO CONVERGE\n");
         if (n==m)
         {
-            if (method==CHOL) Rprintf("    Try increasing niter, using method=LU, or rescaling problem.\n");
-            else              Rprintf("    Try increasing niter, or rescaling problem.\n");
+            if (method==CHOL) printf("    Try increasing niter, using method=LU, or rescaling problem.\n");
+            else              printf("    Try increasing niter, or rescaling problem.\n");
         }
         else
         {
-            if (method==SMW)  Rprintf("    Try increasing niter, using method=PFCF, using method=LU, or rescaling problem.\n");
-            else              Rprintf("    Try increasing niter, or rescaling problem.\n");
+            if (method==SMW)  printf("    Try increasing niter, using method=PFCF, using method=LU, or rescaling problem.\n");
+            else              printf("    Try increasing niter, or rescaling problem.\n");
         }
     }
     else
     {
-        Rprintf("LowRankQP CONVERGED IN %d ITERATIONS\n\n", i+1 );
-        Rprintf("    Primal Feasibility    = %15.7e\n", *prim);
-        Rprintf("    Dual Feasibility      = %15.7e\n", *dual);
-        Rprintf("    Complementarity Value = %15.7e\n", *comp);
-        Rprintf("    Duality Gap           = %15.7e\n", *gap);
-        Rprintf("    Termination Condition = %15.7e\n", *term);
+        printf("LowRankQP CONVERGED IN %d ITERATIONS\n\n", i+1 );
+        printf("    Primal Feasibility    = %15.7e\n", *prim);
+        printf("    Dual Feasibility      = %15.7e\n", *dual);
+        printf("    Complementarity Value = %15.7e\n", *comp);
+        printf("    Duality Gap           = %15.7e\n", *gap);
+        printf("    Termination Condition = %15.7e\n", *term);
     }
 }
 
@@ -877,4 +902,31 @@ void LowRankQP( int *n, int *m, int *p, int* method, int* verbose, int* niter,
             free( T );
         }
     }
+}
+
+int main(){
+  int n = 2, m = 2, p = 1, method = 2,  verbose=0, niter=200;
+  
+  double alpha[] = {0,0,0,0,0,0};
+  double  beta[] = {0,0,0,0,0,0};
+  double    xi[] = {0,0,0,0,0,0};
+  double  zeta[] = {0,0,0,0,0,0};
+
+  double Vmat[] = {20, -1.54, -1.54, 9.10};
+  double dvec[] = {0.2,24.2};
+  double Amat[] = {-1, 4};
+  double bvec[] = {0.2};
+  double uvec[] = {1,1};
+
+  LowRankQP( &n, &m, &p, &method, &verbose, &niter,
+              Vmat, dvec, Amat, bvec, uvec,
+              alpha, beta, xi, zeta);
+
+  printf("Sum of dvec: %f\n", (dasum_(&n, dvec, &p)));
+
+  PrintMatrix("alpha", alpha, &n, &p); 
+  PrintMatrix("beta", beta, &p, &p); 
+  PrintMatrix("xi", xi, &n, &p); 
+  PrintMatrix("zeta", zeta, &n, &p); 
+
 }
