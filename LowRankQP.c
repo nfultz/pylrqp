@@ -14,9 +14,9 @@
 /**** BLAS ****/
 extern double dasum_(int*, double*, int*);
 
-extern void daxpy_(const int *n, const double *alpha,
-       const double *dx, const int *incx,
-                                                                    double *dy, const int *incy);
+extern void daxpy_(const int *n, const double *alpha, const double *dx, const
+        int *incx, double *dy, const int *incy);
+
 extern void   dcopy_(const int *n, const double *dx, const int *incx,
                                       double *dy, const int *incy);
 extern double ddot_(const int *n, const double *dx, const int *incx, const
@@ -97,24 +97,6 @@ double VectorVectorDot( double* x, double* y, int* n )
 
 /*****************************************************************************/
 
-void MatrixVectorMult( double* alpha, double* A, int trans, double* x, double*
-beta, double* b, int* rows, int* cols )
-{
-    int one=1;
-    if (trans)
-    {
-        dgemv_("T", rows, cols, alpha, A, rows, x, &one, beta, b, &one );
-        /* dgemv('T', *rows, *cols, *alpha, A, *rows, x, one, *beta, b, one ); */
-    }
-    else
-    {
-        dgemv_("N", rows, cols, alpha, A, rows, x, &one, beta, b, &one );
-        /* dgemv('N', *rows, *cols, *alpha, A, *rows, x, one, *beta, b, one ); */
-    }
-}
-
-/*****************************************************************************/
-
 void LRQPHeader()
 {
     printf("ITER  PRIM            DUAL            COMP            GAP           TERM\n");
@@ -127,12 +109,14 @@ void LRQPInitPoint( int *n, int *m, int *p, double *Q, double *c, double *A,
     double *w, double *temp )
 {
     int i;
+    int one = 1;
     double pone =  1.0;
     double mone = -1.0;
     double zero =  0.0;
     for (i=0;i<(*n);i++) alpha[i] = u[i] > 1 ? EPSINIT : u[i] * EPSINIT;
     for (i=0;i<(*p);i++) beta[i]  = 0.0;
-    MatrixVectorMult( &pone, Q, 1, alpha, &zero, w, n, m );
+
+    dgemv_("T", n, m, &pone, Q, n, alpha, &one, &zero, w, &one ); // w = Q' * alpha
     for (i=0;i<(*n);i++) temp[i] += -w[i];
     VectorVectorMult( &mone, c, temp, n );
     for (i=0;i<(*n);i++)
@@ -184,7 +168,8 @@ void LRQPCalcStats( int *n, int *m, int *p, double *Q, double *c, double *A,
     double pone =  1.0;
     double mone = -1.0;
     double zero =  0.0;
-    MatrixVectorMult( &pone, Q, 1, alpha, &zero, w, n, m );
+
+    dgemv_("T", n, m, &pone, Q, n, alpha, &one, &zero, w, &one ); // w = Q' * alpha
 
     VectorVectorCopy( UminusAlpha, u, n ); // UminusAlpha = u
     VectorVectorMult( &mone, alpha, UminusAlpha, n ); // UminusAlpha = UminusAlpha + -1 * alpha
@@ -192,7 +177,8 @@ void LRQPCalcStats( int *n, int *m, int *p, double *Q, double *c, double *A,
     for (i=0;i<(*n);i++) XiOnUminusAlpha[i] = xi[i]/UminusAlpha[i];
     for (i=0;i<(*n);i++) ZetaOnAlpha[i] = zeta[i]/alpha[i];
 
-        MatrixVectorMult( &mone, A, 0, beta, &zero, r1, n, p );
+
+        dgemv_("N", n, p, &mone, A, n, beta, &one, &zero, r1, &one); // r1 = -A * beta
         VectorVectorMult( &mone, w,  r1, n );
         VectorVectorMult( &mone, c,  r1, n );
         VectorVectorMult( &mone, xi, r1, n );
@@ -200,7 +186,8 @@ void LRQPCalcStats( int *n, int *m, int *p, double *Q, double *c, double *A,
         quad = VectorVectorDot( alpha, w, n );
 
         VectorVectorCopy( r2, b, p );
-        MatrixVectorMult( &mone, A, 1, alpha, &pone, r2, n, p );
+
+        dgemv_("T", n, p, &mone, A, n, alpha, &one, &pone, r2, &one); // r2 = r2 - A' * alpha
         *dual = dasum_(p, r2, &one ); //sum(abs(r2))
 
     *prim   = dasum_(n, r1, &one ); // sum(abs(r1))
@@ -331,7 +318,8 @@ void LRQPCalcDx( int *n, int *m, int *p, int *method, double *Q, double *c,
 
         LRQPSolve( n, m, &one, method, Q, D, r5, r, M, pivN, buffMx1, P, Beta, Lambda );
         VectorVectorCopy( buffPx1, r2, p );
-        MatrixVectorMult( &pone, A, 1, r, &mone, buffPx1, n, p );
+
+        dgemv_("T", n, p, &pone, A, n, r, &one, &mone, buffPx1, &one); // buffPx1 = A' * r - buffPx1
         
         dgemm_("T","N", p,p,n,&pone, A, n, R, n, &zero, buffPxP, p); // buffPxP = A' * R
 
@@ -341,7 +329,8 @@ void LRQPCalcDx( int *n, int *m, int *p, int *method, double *Q, double *c,
 
         VectorVectorCopy( dbeta, buffPx1, p );
         VectorVectorCopy( dalpha, r , n);
-        MatrixVectorMult( &mone, R, 0, dbeta, &pone, dalpha, n, p );
+
+        dgemv_("N", n,p,&mone, R, n, dbeta, &one, &pone, dalpha, &one); // dalpha = dalpha - R*dbeta
     
     for (i=0;i<(*n);i++) dzeta[i] = r3[i] - (ZetaOnAlpha[i] * dalpha[i]);
     for (i=0;i<(*n);i++) dxi[i]   = r4[i] + (XiOnUminusAlpha[i] * dalpha[i]);
