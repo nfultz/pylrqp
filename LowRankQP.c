@@ -4,8 +4,6 @@
 #include <time.h>
 #include <stdlib.h>
 
-#define CTOF(x) x ## _
-
 #define MAX(A,B) ( (A) > (B) ? (A):(B))
 #define MIN(A,B) ( (A) < (B) ? (A):(B))
 
@@ -84,7 +82,7 @@ void PrintMatrix( char* name, double* vals, int* rows, int* cols )
 double VectorAbsSum( double* v, int *n )
 {
     int one=1;
-    return CTOF(dasum)( n, v, &one );
+    return dasum_( n, v, &one );
     /* return dasum( n, v, &one ); */
 }
 
@@ -93,7 +91,7 @@ double VectorAbsSum( double* v, int *n )
 void VectorVectorCopy( double* lhs, double* rhs, int* n )
 {
     int one=1;
-    CTOF(dcopy)( n, rhs, &one, lhs, &one );
+    dcopy_( n, rhs, &one, lhs, &one );
     /* dcopy( n, rhs, &one, lhs, &one ); */
 }
 
@@ -109,7 +107,7 @@ void VectorVectorDivide( double* top, double* bot, double* res, int* n )
 void VectorVectorMult( double* alpha, double* x, double* y, int* n )
 {
     int one=1;
-    CTOF(daxpy)( n, alpha, x, &one, y, &one );
+    daxpy_( n, alpha, x, &one, y, &one );
     /* daxpy( n, alpha, x, &one, y, &one ); */
 }
 
@@ -127,7 +125,7 @@ void VectorVectorMinus( double* x, double* y, double* res, int* n )
 double VectorVectorDot( double* x, double* y, int* n )
 {
     int one=1;
-    return CTOF(ddot)( n, x, &one, y, &one );
+    return ddot_( n, x, &one, y, &one );
     /* return ddot( n, x, &one, y, &one ); */
 }
 
@@ -155,12 +153,12 @@ beta, double* b, int* rows, int* cols )
     int one=1;
     if (trans)
     {
-        CTOF(dgemv)("T", rows, cols, alpha, A, rows, x, &one, beta, b, &one );
+        dgemv_("T", rows, cols, alpha, A, rows, x, &one, beta, b, &one );
         /* dgemv('T', *rows, *cols, *alpha, A, *rows, x, one, *beta, b, one ); */
     }
     else
     {
-        CTOF(dgemv)("N", rows, cols, alpha, A, rows, x, &one, beta, b, &one );
+        dgemv_("N", rows, cols, alpha, A, rows, x, &one, beta, b, &one );
         /* dgemv('N', *rows, *cols, *alpha, A, *rows, x, one, *beta, b, one ); */
     }
 }
@@ -177,7 +175,7 @@ void MatrixConstantPlusDiag( double* A, double c, int* n )
 
 void MatrixCholFactorize( double* A, int* n, int* info )
 {
-    CTOF(dpotrf)( "L", n, A, n, info );
+    dpotrf_( "L", n, A, n, info );
     /* dpotrf( 'L', *n, A, *n, info ); */
 }
 
@@ -185,7 +183,7 @@ void MatrixCholFactorize( double* A, int* n, int* info )
 
 void MatrixCholSolve( double* A, int* n, double* rhs, int *nrhs, int* info )
 {
-    CTOF(dpotrs)("L", n, nrhs, A, n, rhs, n, info );
+    dpotrs_("L", n, nrhs, A, n, rhs, n, info );
     /* dpotrs('L', *n, *nrhs, A, *n, rhs, *n, info ); */
 }
 
@@ -193,7 +191,7 @@ void MatrixCholSolve( double* A, int* n, double* rhs, int *nrhs, int* info )
 
 void MatrixLUFactorize( double* A, int* n, int* ipiv, int* info )
 {
-    CTOF(dgetrf)( n, n, A, n, ipiv, info );
+    dgetrf_( n, n, A, n, ipiv, info );
     /* dgetrf( *n, *n, A, *n, ipiv, info ); */
 }
 
@@ -203,7 +201,7 @@ void MatrixLUSolve( double* A, int* n, int* ipiv, double* rhs, int *nrhs )
 {
     int info = 0;
     int one  = 1;
-    CTOF(dgetrs)("N", n, nrhs, A, n, ipiv, rhs, n, &info );
+    dgetrs_("N", n, nrhs, A, n, ipiv, rhs, n, &info );
     /* dgetrs('N', *n, *nrhs, A, *n, ipiv, rhs, *n, &info ); */
 }
 
@@ -270,12 +268,12 @@ void MatrixMatrixMult( double *alpha, double* A, int transA, double* B,
     {
         if (transB)
         {
-            CTOF(dgemm)( "T", "T", rC, cC, cB, alpha, A, rA, B, rB, beta, C, rC );
+            dgemm_( "T", "T", rC, cC, cB, alpha, A, rA, B, rB, beta, C, rC );
             /* dgemm( 'T', 'T', *rC, *cC, *cB, *alpha, A, *rA, B, *rB, *beta, C, *rC ); */
         }
         else
         {
-            CTOF(dgemm)( "T", "N", rC, cC, rB, alpha, A, rA, B, rB, beta, C, rC );
+            dgemm_( "T", "N", rC, cC, rB, alpha, A, rA, B, rB, beta, C, rC );
             /* dgemm( 'T', 'N', *rC, *cC, *rB, *alpha, A, *rA, B, *rB, *beta, C,*rC ); */
         }
     }
@@ -283,12 +281,12 @@ void MatrixMatrixMult( double *alpha, double* A, int transA, double* B,
     {
         if (transB)
         {
-            CTOF(dgemm)( "N", "T", rC, cC, cA, alpha, A, rA, B, rB, beta, C, rC );
+            dgemm_( "N", "T", rC, cC, cA, alpha, A, rA, B, rB, beta, C, rC );
             /* dgemm( 'N', 'T', *rC, *cC, *cA, *alpha, A, *rA, B, *rB, *beta, C, *rC ); */
         }
         else
         {
-            CTOF(dgemm)( "N", "N", rC, cC, cA, alpha, A, rA, B, rB, beta, C, rC );
+            dgemm_( "N", "N", rC, cC, cA, alpha, A, rA, B, rB, beta, C, rC );
             /* dgemm( 'N', 'N', *rC, *cC, *cA, *alpha, A, *rA, B, *rB, *beta, C, *rC ); */
         }
     }
