@@ -123,28 +123,6 @@ void MatrixCholFactorize( double* A, int* n, int* info )
 
 /*****************************************************************************/
 
-void MatrixCholSolve( double* A, int* n, double* rhs, int *nrhs, int* info )
-{
-    dpotrs_("L", n, nrhs, A, n, rhs, n, info );
-    /* dpotrs('L', *n, *nrhs, A, *n, rhs, *n, info ); */
-}
-
-
-/*****************************************************************************/
-
-void MatrixMatrixCopy( double* lhs, double* rhs, int* rows, int* cols )
-{
-    int i;
-    int one = 1;
-    int len = (*rows)*(*cols);
-    dcopy_(&len, rhs, &one, lhs, &one);
-//    for (i=0;i<len;i++) lhs[i] = rhs[i];
-}
-
-
-
-/*****************************************************************************/
-
 void LRQPHeader()
 {
     printf("ITER  PRIM            DUAL            COMP            GAP           TERM\n");
@@ -306,9 +284,9 @@ void LRQPSolve( int *n, int *m, int *nrhs, int *method, double *Q, double *D,
     int len = *n * *nrhs;
     
 
-    //MatrixMatrixCopy( sol, rhs, n, nrhs );
     dcopy_(&len, rhs, &one, sol, &one); // copy rhs to sol
-        MatrixCholSolve( M, n, sol, nrhs, &info );
+
+    dpotrs_("L", n, nrhs, M, n, sol, n, &info ); // sol = M^-1 * sol
 }
 
 /******************************************************************************
@@ -365,7 +343,9 @@ void LRQPCalcDx( int *n, int *m, int *p, int *method, double *Q, double *c,
         
         dgemm_("T","N", p,p,n,&pone, A, n, R, n, &zero, buffPxP, p); // buffPxP = A' * R
         MatrixCholFactorize( buffPxP, p, &info );
-        MatrixCholSolve( buffPxP, p, buffPx1, &one, &info);
+
+        dpotrs_("L", p, &one, buffPxP, p, buffPx1, p, &info ); // buffPx1 = buffPxP ^-1 * buffPx1
+
         VectorVectorCopy( dbeta, buffPx1, p );
         VectorVectorCopy( dalpha, r , n);
         MatrixVectorMult( &mone, R, 0, dbeta, &pone, dalpha, n, p );
