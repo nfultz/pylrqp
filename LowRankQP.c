@@ -189,7 +189,7 @@ void LRQPDisplay( int i, double *prim, double *dual, double *comp, double *gap,
 
 /*****************************************************************************/
 
-void LRQPSummary( int i, int niter, int method, int n, int m, double *prim, 
+void LRQPSummary( int i, int niter, double *prim, 
     double *dual, double *comp, double *gap, double *term )
 {
     if (i==niter)
@@ -284,9 +284,9 @@ void LRQPCalcDx( int *n, int *m, int *p, int *method, double *Q, double *c,
         dpotrs_("L", p, &one, buffPxP, p, buffPx1, p, &info ); // buffPx1 = buffPxP ^-1 * buffPx1
 
 
-        dcopy_(p, buffPx1, &one, dbeta, &one);
+        dcopy_(p, buffPx1, &one, dbeta, &one); //dbeta = buffPx1
 
-        dcopy_(n, r, &one, dalpha, &one);
+        dcopy_(n, r, &one, dalpha, &one); // dalpha = r
 
         dgemv_("N", n,p,&mone, R, n, dbeta, &one, &pone, dalpha, &one); // dalpha = dalpha - R*dbeta
     
@@ -417,7 +417,7 @@ void LowRankQP( int *n, int *m, int *p, int* method, int* verbose, int* niter,
             UminusAlpha, &mult );
     }
     
-    LRQPSummary( i, *niter, *method, *n, *m, &prim, &dual, &comp, &gap, &term );
+    LRQPSummary( i, *niter, &prim, &dual, &comp, &gap, &term );
 
     /* Free Memory */
     free(dalpha);      free(dxi);             free(dzeta);
