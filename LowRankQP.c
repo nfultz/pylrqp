@@ -129,7 +129,7 @@ void LRQPCalcStats( int *n, int *m, int *p, double *Q, double *c, double *A,
     double *b, double *u, double *alpha, double* beta, double *xi, 
     double *zeta, double *dalpha, double* dbeta, double *dxi, double *dzeta,
     double *UminusAlpha, double *XiOnUminusAlpha, double *ZetaOnAlpha, 
-    double* w, double *r1, double *r2, double *D, double *prim, double *dual, 
+    double* w, double *r2, double *D, double *prim, double *dual, 
     double *comp, double *gap, double *term, double * mult, double *t)
 {
     int i;
@@ -164,7 +164,7 @@ void LRQPCalcStats( int *n, int *m, int *p, double *Q, double *c, double *A,
         dgemv_("T", n, p, &mone, A, n, alpha, &one, &pone, r2, &one); // r2 = r2 - A' * alpha
         *dual = dasum_(p, r2, &one ); //sum(abs(r2))
 
-    *prim   = dasum_(n, w, &one ); // sum(abs(r1))
+    *prim   = dasum_(n, w, &one ); // sum(abs(w))
 
     *comp   = ddot_(n,  alpha, &one, zeta,  &one ) + ddot_(n, UminusAlpha, &one, xi,  &one );
 
@@ -378,7 +378,7 @@ void LowRankQP( int *n, int *m, int *p, int* method, int* verbose, int* niter,
     for (i=0;i<(*niter);i++)
     {
         LRQPCalcStats( n, m, p, Q, c, A, b, u, alpha, beta, xi, zeta, dalpha,
-            dbeta, dxi, dzeta, UminusAlpha, XiOnUminusAlpha, ZetaOnAlpha, w, r1,
+            dbeta, dxi, dzeta, UminusAlpha, XiOnUminusAlpha, ZetaOnAlpha, w,
             r2, D, &prim, &dual, &comp, &gap, &term, &mult, &t );
 
         if ( *verbose ) LRQPDisplay( i+1, &prim, &dual, &comp, &gap, &term  );
