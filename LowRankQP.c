@@ -329,7 +329,9 @@ void LowRankQP( int *n, int *m, int *p, int* method, int* verbose, int* niter,
     int np = *n * *p;
     int np1 = *n + 1;
     int one = 1;
+    int izero = 0;
     double pone =  1.0;
+    double zero =  0.0;
 
     /* Iteration Display variables */
     double mult = 0.0;
@@ -397,8 +399,9 @@ void LowRankQP( int *n, int *m, int *p, int* method, int* verbose, int* niter,
         //LRQPSolve( n, m, p, method, Q, D, A, R, M, pivN, buffMxP, P, Beta, Lambda );
         dcopy_(&np, A, &one, R, &one); // copy A to R
         dpotrs_("L", n, p, M, n, R, n, &info ); // R = M^-1 * R
-        for (i=0;i<(*n);i++) r3[i] = 0;
-        for (i=0;i<(*n);i++) r4[i] = 0;
+
+        dcopy_(n,&zero, &izero, r3, &one); // r3 = 0
+        dcopy_(n,&zero, &izero, r4, &one); // r4 = 0
         
         LRQPCalcDx( n, p, Q, c, A, b, u, alpha, beta, xi, zeta,
             dalpha, dbeta, dxi, dzeta, UminusAlpha, ZetaOnAlpha, 
