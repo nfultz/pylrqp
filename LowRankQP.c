@@ -142,7 +142,6 @@ void LRQPInitPoint( int *n, int *p, double *Q, double *c, double *A,
 void LRQPCalcStats( int *n, int *m, int *p, double *Q, double *c, double *A,
     double *b, double *u,
     struct sol *solution,
-    double *dalpha, double* dbeta, double *dxi, double *dzeta,
     double *UminusAlpha, double *XiOnUminusAlpha, double *ZetaOnAlpha, 
     double* w, double *r2, double *D, struct IterVars *ivars)
 {
@@ -254,7 +253,7 @@ void LRQPSummary( int i, int niter, struct IterVars *ivars)
 void LRQPCalcDx( int *n, int *p, double *Q, double *c,
     double *A, double *b, double * u,
     struct sol *solution,
-    double *dalpha, double* dbeta, double *dxi, double *dzeta,
+    struct sol *step,
     double *UminusAlpha, double *ZetaOnAlpha, double *XiOnUminusAlpha,
     double* buffPxP, double *buffPx1,
     double *R, double *r, double *w, double* r2, double *r3,
@@ -289,14 +288,14 @@ void LRQPCalcDx( int *n, int *p, double *Q, double *c,
         dpotrs_("L", p, &one, buffPxP, p, buffPx1, p, &info ); // buffPx1 = buffPxP ^-1 * buffPx1
 
 
-        dcopy_(p, buffPx1, &one, dbeta, &one); //dbeta = buffPx1
+        dcopy_(p, buffPx1, &one, step->beta, &one); //dbeta = buffPx1
 
-        dcopy_(n, r, &one, dalpha, &one); // dalpha = r
+        dcopy_(n, r, &one, step->alpha, &one); // dalpha = r
 
-        dgemv_("N", n,p,&mone, R, n, dbeta, &one, &pone, dalpha, &one); // dalpha = dalpha - R*dbeta
+        dgemv_("N", n,p,&mone, R, n, step->beta, &one, &pone, step->alpha, &one); // dalpha = dalpha - R*dbeta
     
-    for (i=0;i<(*n);i++) dzeta[i] = r3[i] - (ZetaOnAlpha[i] * dalpha[i]);
-    for (i=0;i<(*n);i++) dxi[i]   = r4[i] + (XiOnUminusAlpha[i] * dalpha[i]);
+    for (i=0;i<(*n);i++) step->zeta[i] = r3[i] - (ZetaOnAlpha[i] * step->alpha[i]);
+    for (i=0;i<(*n);i++) step->xi[i]   = r4[i] + (XiOnUminusAlpha[i] * step->alpha[i]);
 
 }
 
@@ -314,7 +313,7 @@ void LRQPCalcDx( int *n, int *p, double *Q, double *c,
 *****************************************************************************/
 
 void LRQPStep( int *n, int *p, struct sol *solution,
-        double *dalpha, double* dbeta, double *dxi, double *dzeta,
+        struct sol *step,
     double *UminusAlpha, double *mult)
 {
     int i;
@@ -322,16 +321,16 @@ void LRQPStep( int *n, int *p, struct sol *solution,
     *mult= 1.0;
     for (i=0;i<(*n);i++)
     {
-        if (dalpha[i]<0.0) *mult = MIN(*mult,(-solution->alpha[i]/dalpha[i]));
-        if (dalpha[i]>0.0) *mult = MIN(*mult,(UminusAlpha[i]/dalpha[i]));
-        if (dxi[i]<0.0)    *mult = MIN(*mult,(-solution->xi[i]/dxi[i]));
-        if (dzeta[i]<0.0)  *mult = MIN(*mult,(-solution->zeta[i]/dzeta[i]));
+        if (step->alpha[i]<0.0) *mult = MIN(*mult,(-solution->alpha[i]/step->alpha[i]));
+        if (step->alpha[i]>0.0) *mult = MIN(*mult,(UminusAlpha[i]/step->alpha[i]));
+        if (step->xi[i]<0.0)    *mult = MIN(*mult,(-solution->xi[i]/step->xi[i]));
+        if (step->zeta[i]<0.0)  *mult = MIN(*mult,(-solution->zeta[i]/step->zeta[i]));
     }
     *mult *= 0.99;
-    daxpy_(n, mult, dalpha, &one, solution->alpha, &one);
-    daxpy_(p, mult, dbeta, &one, solution->beta, &one);
-    daxpy_(n, mult, dxi, &one, solution->xi, &one);
-    daxpy_(n, mult, dzeta, &one, solution->zeta, &one);
+    daxpy_(n, mult, step->alpha, &one, solution->alpha, &one);
+    daxpy_(p, mult, step->beta,  &one, solution->beta,  &one);
+    daxpy_(n, mult, step->xi,    &one, solution->xi,    &one);
+    daxpy_(n, mult, step->zeta,  &one, solution->zeta,  &one);
 }
 
 /******************************************************************************/
@@ -362,12 +361,13 @@ void LowRankQP( int *n, int *m, int *p, int* method, int* verbose, int* niter,
     };
 
     struct sol solution = { alpha, beta, xi, zeta };
+    struct sol step;
 
     /* Step direction vectors */
-    double *dalpha = (double *) calloc( (*n), sizeof(double) );
-    double *dbeta  = (double *) calloc( (*p), sizeof(double) );
-    double *dxi    = (double *) calloc( (*n), sizeof(double) );
-    double *dzeta  = (double *) calloc( (*n), sizeof(double) );
+    step.alpha = (double *) calloc( (*n), sizeof(double) );
+    step.beta  = (double *) calloc( (*p), sizeof(double) );
+    step.xi    = (double *) calloc( (*n), sizeof(double) );
+    step.zeta  = (double *) calloc( (*n), sizeof(double) );
 
     /* Some repeatedly occuring vectors */
     double *UminusAlpha     = (double *) calloc( *n, sizeof(double) );
@@ -396,8 +396,8 @@ void LowRankQP( int *n, int *m, int *p, int* method, int* verbose, int* niter,
 
     for (i=0;i<(*niter);i++)
     {
-        LRQPCalcStats( n, m, p, Q, c, A, b, u, &solution, dalpha,
-            dbeta, dxi, dzeta, UminusAlpha, XiOnUminusAlpha, ZetaOnAlpha, w,
+        LRQPCalcStats( n, m, p, Q, c, A, b, u, &solution,
+            UminusAlpha, XiOnUminusAlpha, ZetaOnAlpha, w,
             r2, D, &ivars);
 
         if ( *verbose ) LRQPDisplay( i+1, &ivars);
@@ -420,31 +420,30 @@ void LowRankQP( int *n, int *m, int *p, int* method, int* verbose, int* niter,
         dcopy_(n,&zero, &izero, r4, &one); // r4 = 0
         
         LRQPCalcDx( n, p, Q, c, A, b, u, &solution,
-            dalpha, dbeta, dxi, dzeta, UminusAlpha, ZetaOnAlpha, 
+            &step, UminusAlpha, ZetaOnAlpha, 
             XiOnUminusAlpha, buffPxP, buffPx1, R, r, w,
             r2, r3, r4, M, &ivars.t);
 
-        for (i=0;i<(*n);i++) r3[i] = ( ivars.t - (dalpha[i] * dzeta[i]) )/alpha[i];
-        for (i=0;i<(*n);i++) r4[i] = ( ivars.t + (dalpha[i] * dxi[i]) )/UminusAlpha[i];
+        for (i=0;i<(*n);i++) r3[i] = ( ivars.t - (step.alpha[i] * step.zeta[i]) )/solution.alpha[i];
+        for (i=0;i<(*n);i++) r4[i] = ( ivars.t + (step.alpha[i] * step.xi[i]) )/UminusAlpha[i];
         
         LRQPCalcDx( n, p, Q, c, A, b, u, &solution,
-            dalpha, dbeta, dxi, dzeta, UminusAlpha, ZetaOnAlpha,
+            &step, UminusAlpha, ZetaOnAlpha,
             XiOnUminusAlpha, buffPxP, buffPx1, R, r, w,
             r2, r3, r4, M, &ivars.t);
 
-        LRQPStep( n, p, &solution, dalpha, dbeta, dxi, dzeta,
-            UminusAlpha, &ivars.mult );
+        LRQPStep( n, p, &solution, &step, UminusAlpha, &ivars.mult );
     }
     
     LRQPSummary( i, *niter, &ivars);
 
     /* Free Memory */
-    free(dalpha);      free(dxi);             free(dzeta);
+    free(step.alpha);      free(step.xi);             free(step.zeta);
     free(UminusAlpha); free(XiOnUminusAlpha); free(ZetaOnAlpha);
     free(r3); free(r4);
     free(D);  free(w);  free(r);
         
-        free( dbeta );
+        free( step.beta );
         free( r2 );
         free( R );
         free( buffPxP );
