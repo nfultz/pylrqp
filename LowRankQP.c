@@ -223,6 +223,32 @@ void LRQPCalcStats( struct prob *problem,
 
 /*****************************************************************************/
 
+void LRQPFactorize(struct prob *problem, double* M, double* D, double* R){
+
+    int *n = problem->n;
+    int *p = problem->p;
+    int n2 = *n * *n;
+    int np1 = *n + 1;
+    int np = *n * *p;
+    int one = 1;
+    int info = 0;
+    double pone = 1.0;
+
+
+    dcopy_(&n2, problem->Q, &one, M, &one); // copy Q into M
+        
+    daxpy_(n,&pone,D, &one, M, &np1); // diag(M) = Diag(M) + D
+
+    dpotrf_( "L", n, M, n, &info ); // Cholesky factor of M
+
+    dcopy_(&np, problem->A, &one, R, &one); // copy A to R
+    dpotrs_("L", n, p, M, n, R, n, &info ); // R = M^-1 * R
+
+}
+
+
+/*****************************************************************************/
+
 void LRQPDisplay( int i, struct IterVars *ivars)
 {
     printf("%3d %15.7e %15.7e %15.7e %15.7e %15.7e \n", i,
@@ -384,9 +410,6 @@ void LowRankQP( int *n, int *m, int *p, int* method, int* verbose, int* niter,
 {
     int i;
     int info = 0;
-    int n2 = *n * *n;
-    int np = *n * *p;
-    int np1 = *n + 1;
     int one = 1;
     int izero = 0;
     double pone =  1.0;
@@ -449,18 +472,9 @@ void LowRankQP( int *n, int *m, int *p, int* method, int* verbose, int* niter,
         if ( *verbose ) LRQPDisplay( i+1, &ivars);
         if ( ivars.term < EPSTERM ) break;
 
-        //LRQPFactorize( n, m, method, Q, D, M, pivN, buffNxM, P, Beta, Lambda,
-        //    LambdaTemp, T );
-        //MatrixMatrixCopy( M, Q, n, n );
-        dcopy_(&n2, problem.Q, &one, M, &one); // copy Q into M
+        LRQPFactorize(&problem, M, D, R);
         
-        daxpy_(n,&pone,D, &one, M, &np1); // diag(M) = Diag(M) + D
-
-        dpotrf_( "L", n, M, n, &info ); // Cholesky factor of M
-
-        //LRQPSolve( n, m, p, method, Q, D, A, R, M, pivN, buffMxP, P, Beta, Lambda );
-        dcopy_(&np, problem.A, &one, R, &one); // copy A to R
-        dpotrs_("L", n, p, M, n, R, n, &info ); // R = M^-1 * R
+        // PRED
 
         dcopy_(n,&zero, &izero, r3, &one); // r3 = 0
         dcopy_(n,&zero, &izero, r4, &one); // r4 = 0
@@ -469,6 +483,8 @@ void LowRankQP( int *n, int *m, int *p, int* method, int* verbose, int* niter,
             &step, UminusAlpha, ZetaOnAlpha, 
             XiOnUminusAlpha, buffPxP, buffPx1, R, r, w,
             r2, r3, r4, M, &ivars.t);
+
+        //CORR
 
         //r3[i] = ( ivars.t - (step.alpha[i] * step.zeta[i]) )/solution.alpha[i];
         dcopy_(n, &ivars.t, &izero, r3, &one);
