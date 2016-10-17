@@ -245,7 +245,6 @@ void LRQPCalcDx( int *n, int *p, double *Q, double *c,
 {
 
     int i, j;
-    int np = *n * *p;
     int    info = 0;
     int    one  = 1;
     double pone =  1.0;
@@ -327,6 +326,7 @@ void LowRankQP( int *n, int *m, int *p, int* method, int* verbose, int* niter,
     int i;
     int info = 0;
     int n2 = *n * *n;
+    int np = *n * *p;
     int one = 1;
 
     /* Iteration Display variables */
@@ -403,8 +403,8 @@ void LowRankQP( int *n, int *m, int *p, int* method, int* verbose, int* niter,
             XiOnUminusAlpha, buffPxP, buffPx1, R, r, r1,
             r2, r3, r4, r5, D, M, &t, PRED);
 
-        for (i=0;i<(*n);i++) r3[i] = ( *t - (dalpha[i] * dzeta[i]) )/alpha[i];
-        for (i=0;i<(*n);i++) r4[i] = ( *t + (dalpha[i] * dxi[i]) )/UminusAlpha[i];
+        for (i=0;i<(*n);i++) r3[i] = ( t - (dalpha[i] * dzeta[i]) )/alpha[i];
+        for (i=0;i<(*n);i++) r4[i] = ( t + (dalpha[i] * dxi[i]) )/UminusAlpha[i];
         
         LRQPCalcDx( n, p, Q, c, A, b, u, alpha, beta, xi, zeta,
             dalpha, dbeta, dxi, dzeta, UminusAlpha, ZetaOnAlpha,
