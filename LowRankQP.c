@@ -256,16 +256,18 @@ void LRQPCalcDx( int *n, int *p, double *Q, double *c,
         //LRQPSolve( n, m, p, method, Q, D, A, R, M, pivN, buffMxP, P, Beta, Lambda );
         dcopy_(&np, A, &one, R, &one); // copy A to R
         dpotrs_("L", n, p, M, n, R, n, &info ); // R = M^-1 * R
-    }
-    for (i=0;i<(*n);i++)
-    {
-        r3[i] = - zeta[i];
-        r4[i] = - xi[i];
+        for (i=0;i<(*n);i++) r3[i] = 0;
+        for (i=0;i<(*n);i++) r4[i] = 0;
     }
     if (predcorr==CORR)
     {
-        for (i=0;i<(*n);i++) r3[i] += ( *t - (dalpha[i] * dzeta[i]) )/alpha[i];
-        for (i=0;i<(*n);i++) r4[i] += ( *t + (dalpha[i] * dxi[i]) )/UminusAlpha[i];
+        for (i=0;i<(*n);i++) r3[i] = ( *t - (dalpha[i] * dzeta[i]) )/alpha[i];
+        for (i=0;i<(*n);i++) r4[i] = ( *t + (dalpha[i] * dxi[i]) )/UminusAlpha[i];
+    }
+    for (i=0;i<(*n);i++)
+    {
+        r3[i] -= zeta[i];
+        r4[i] -= xi[i];
     }
     for (i=0;i<(*n);i++) r5[i] = r1[i] + r3[i] - r4[i];
 
