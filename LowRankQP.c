@@ -38,6 +38,17 @@ extern void dpotrs_(const char* uplo, const int* n,
                  const int* nrhs, const double* a, const int* lda, double* b,
                  const int* ldb, int* info);
 
+/*******************/
+
+struct IterVars {
+    double mult;
+    double prim;
+    double dual;
+    double comp;
+    double gap ;
+    double term;
+    double t   ;
+};
 
 /*****************************************************************************n
 
@@ -129,8 +140,7 @@ void LRQPCalcStats( int *n, int *m, int *p, double *Q, double *c, double *A,
     double *b, double *u, double *alpha, double* beta, double *xi, 
     double *zeta, double *dalpha, double* dbeta, double *dxi, double *dzeta,
     double *UminusAlpha, double *XiOnUminusAlpha, double *ZetaOnAlpha, 
-    double* w, double *r2, double *D, double *prim, double *dual, 
-    double *comp, double *gap, double *term, double * mult, double *t)
+    double* w, double *r2, double *D, struct IterVars *ivars)
 {
     int i;
     int one = 1;
@@ -162,33 +172,37 @@ void LRQPCalcStats( int *n, int *m, int *p, double *Q, double *c, double *A,
         dcopy_(p, b, &one, r2, &one); // r2 = b
 
         dgemv_("T", n, p, &mone, A, n, alpha, &one, &pone, r2, &one); // r2 = r2 - A' * alpha
-        *dual = dasum_(p, r2, &one ); //sum(abs(r2))
 
-    *prim   = dasum_(n, w, &one ); // sum(abs(w))
+    ivars->dual = dasum_(p, r2, &one ); //sum(abs(r2))
 
-    *comp   = ddot_(n,  alpha, &one, zeta,  &one ) + ddot_(n, UminusAlpha, &one, xi,  &one );
+    ivars->prim   = dasum_(n, w, &one ); // sum(abs(w))
+
+    ivars->comp   = ddot_(n,  alpha, &one, zeta,  &one ) + ddot_(n, UminusAlpha, &one, xi,  &one );
 
     cTalpha = ddot_(n, c, &one, alpha, &one );
 
-    *gap = fabs( quad + cTalpha + ddot_(n, u, &one, xi, &one ) + ddot_(p, b, &one, beta, &one ) );
-    *term   = *comp / ( fabs( 0.5*quad + cTalpha) + 1.0);
-    temp    = (1.0 - *mult + EPSIPM)/(10.0 + *mult);
-    *t      = *comp*(temp*temp)/(2*(*n));
+    ivars->gap = fabs( quad + cTalpha + ddot_(n, u, &one, xi, &one ) + ddot_(p, b, &one, beta, &one ) );
+    ivars->term   = ivars->comp / ( fabs( 0.5*quad + cTalpha) + 1.0);
+    temp    = (1.0 - ivars->mult + EPSIPM)/(10.0 + ivars->mult);
+    ivars->t      = ivars->comp*(temp*temp)/(2*(*n));
     for (i=0;i<(*n);i++) D[i] = XiOnUminusAlpha[i] + ZetaOnAlpha[i] + EPSPERT;
 }
 
 /*****************************************************************************/
 
-void LRQPDisplay( int i, double *prim, double *dual, double *comp, double *gap,
-                  double *term )
+void LRQPDisplay( int i, struct IterVars *ivars)
 {
-    printf("%3d %15.7e %15.7e %15.7e %15.7e %15.7e \n", i, *prim, *dual, *comp, *gap, *term );
+    printf("%3d %15.7e %15.7e %15.7e %15.7e %15.7e \n", i,
+            ivars->prim,
+            ivars->dual,
+            ivars->comp,
+            ivars->gap,
+            ivars->term );
 }
 
 /*****************************************************************************/
 
-void LRQPSummary( int i, int niter, double *prim, 
-    double *dual, double *comp, double *gap, double *term )
+void LRQPSummary( int i, int niter, struct IterVars *ivars)
 {
     if (i==niter)
     {
@@ -198,11 +212,11 @@ void LRQPSummary( int i, int niter, double *prim,
     else
     {
         printf("LowRankQP CONVERGED IN %d ITERATIONS\n\n", i+1 );
-        printf("    Primal Feasibility    = %15.7e\n", *prim);
-        printf("    Dual Feasibility      = %15.7e\n", *dual);
-        printf("    Complementarity Value = %15.7e\n", *comp);
-        printf("    Duality Gap           = %15.7e\n", *gap);
-        printf("    Termination Condition = %15.7e\n", *term);
+        printf("    Primal Feasibility    = %15.7e\n", ivars->prim);
+        printf("    Dual Feasibility      = %15.7e\n", ivars->dual);
+        printf("    Complementarity Value = %15.7e\n", ivars->comp);
+        printf("    Duality Gap           = %15.7e\n", ivars->gap);
+        printf("    Termination Condition = %15.7e\n", ivars->term);
     }
 }
 
@@ -248,6 +262,7 @@ void LRQPCalcDx( int *n, int *p, double *Q, double *c,
     double pone =  1.0;
     double mone = -1.0;
     double zero =  0.0;
+
 
     daxpy_(n, &mone, zeta, &one, r3, &one); //r3 -= zeta
     daxpy_(n, &mone, xi,   &one, r4, &one); // r4 -= xi
@@ -331,13 +346,15 @@ void LowRankQP( int *n, int *m, int *p, int* method, int* verbose, int* niter,
     double zero =  0.0;
 
     /* Iteration Display variables */
-    double mult = 0.0;
-    double prim = 0.0;
-    double dual = 0.0;
-    double comp = 0.0;
-    double gap  = 0.0;
-    double term = 0.0;
-    double t    = 0.0;
+    struct IterVars ivars = {
+      .mult = 0.0,
+      .prim = 0.0,
+      .dual = 0.0,
+      .comp = 0.0,
+      .gap  = 0.0,
+      .term = 0.0,
+      .t    = 0.0
+    };
 
     /* Step direction vectors */
     double *dalpha = (double *) calloc( (*n), sizeof(double) );
@@ -379,10 +396,10 @@ void LowRankQP( int *n, int *m, int *p, int* method, int* verbose, int* niter,
     {
         LRQPCalcStats( n, m, p, Q, c, A, b, u, alpha, beta, xi, zeta, dalpha,
             dbeta, dxi, dzeta, UminusAlpha, XiOnUminusAlpha, ZetaOnAlpha, w,
-            r2, D, &prim, &dual, &comp, &gap, &term, &mult, &t );
+            r2, D, &ivars);
 
-        if ( *verbose ) LRQPDisplay( i+1, &prim, &dual, &comp, &gap, &term  );
-        if ( term < EPSTERM ) break;
+        if ( *verbose ) LRQPDisplay( i+1, &ivars);
+        if ( ivars.term < EPSTERM ) break;
 
         //LRQPFactorize( n, m, method, Q, D, M, pivN, buffNxM, P, Beta, Lambda,
         //    LambdaTemp, T );
@@ -403,21 +420,21 @@ void LowRankQP( int *n, int *m, int *p, int* method, int* verbose, int* niter,
         LRQPCalcDx( n, p, Q, c, A, b, u, alpha, beta, xi, zeta,
             dalpha, dbeta, dxi, dzeta, UminusAlpha, ZetaOnAlpha, 
             XiOnUminusAlpha, buffPxP, buffPx1, R, r, r1,
-            r2, r3, r4, r5, D, M, &t);
+            r2, r3, r4, r5, D, M, &ivars.t);
 
-        for (i=0;i<(*n);i++) r3[i] = ( t - (dalpha[i] * dzeta[i]) )/alpha[i];
-        for (i=0;i<(*n);i++) r4[i] = ( t + (dalpha[i] * dxi[i]) )/UminusAlpha[i];
+        for (i=0;i<(*n);i++) r3[i] = ( ivars.t - (dalpha[i] * dzeta[i]) )/alpha[i];
+        for (i=0;i<(*n);i++) r4[i] = ( ivars.t + (dalpha[i] * dxi[i]) )/UminusAlpha[i];
         
         LRQPCalcDx( n, p, Q, c, A, b, u, alpha, beta, xi, zeta,
             dalpha, dbeta, dxi, dzeta, UminusAlpha, ZetaOnAlpha,
             XiOnUminusAlpha, buffPxP, buffPx1, R, r, r1,
-            r2, r3, r4, r5, D, M, &t);
+            r2, r3, r4, r5, D, M, &ivars.t);
 
         LRQPStep( n, p, alpha, beta, xi, zeta, dalpha, dbeta, dxi, dzeta,
-            UminusAlpha, &mult );
+            UminusAlpha, &ivars.mult );
     }
     
-    LRQPSummary( i, *niter, &prim, &dual, &comp, &gap, &term );
+    LRQPSummary( i, *niter, &ivars);
 
     /* Free Memory */
     free(dalpha);      free(dxi);             free(dzeta);
