@@ -248,11 +248,10 @@ void LRQPCalcDx( int *n, int *p, double *Q, double *c,
     double pone =  1.0;
     double mone = -1.0;
     double zero =  0.0;
-    for (i=0;i<(*n);i++)
-    {
-        r3[i] -= zeta[i];
-        r4[i] -= xi[i];
-    }
+
+    daxpy_(n, &mone, zeta, &one, r3, &one); //r3 -= zeta
+    daxpy_(n, &mone, xi,   &one, r4, &one); // r4 -= xi
+
     for (i=0;i<(*n);i++) r5[i] = r1[i] + r3[i] - r4[i];
 
         //LRQPSolve( n, m, &one, method, Q, D, r5, r, M, pivN, buffMx1, P, Beta, Lambda );
