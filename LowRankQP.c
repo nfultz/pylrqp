@@ -167,6 +167,7 @@ void LRQPCalcStats( struct prob *problem,
     double pone =  1.0;
     double mone = -1.0;
     double zero =  0.0;
+    double epspert = EPSPERT;
 
     int *n = problem->n;
     int *p = problem->p;
@@ -208,7 +209,11 @@ void LRQPCalcStats( struct prob *problem,
     ivars->term   = ivars->comp / ( fabs( 0.5*quad + cTalpha) + 1.0);
     temp    = (1.0 - ivars->mult + EPSIPM)/(10.0 + ivars->mult);
     ivars->t      = ivars->comp*(temp*temp)/(2*(*n));
-    for (i=0;i<(*n);i++) D[i] = XiOnUminusAlpha[i] + ZetaOnAlpha[i] + EPSPERT;
+
+    //D[i] = XiOnUminusAlpha[i] + ZetaOnAlpha[i] + EPSPERT;
+    dcopy_(n, XiOnUminusAlpha, &one, D, &one);
+    daxpy_(n, &pone, ZetaOnAlpha, &one, D, &one);
+    daxpy_(n, &pone, &epspert, &izero, D, &one);
 }
 
 /*****************************************************************************/
