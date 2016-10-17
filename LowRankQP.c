@@ -32,6 +32,11 @@ extern void dtbsv_(const   char*   UPLO, const char*   TRANS, const char* DIAG,
         const int*     N, const int*     K, const double* A, const int*     LDA,
         const double* X, const int*     INCX);
 
+extern void dgbmv_( const char*   TRANS, const int*     M, const int*     N,
+        const int*     KL, const int*     KU, const double* ALPHA, const
+        double*  A, const int*     LDA, const double*  X, const int*     INCX,
+        const double* BETA, const double*  Y, const int*     INCY )     ;
+
 /**** LAPACK ****/
 
 extern void dpotrf_(const char* uplo, const int* n,
@@ -287,6 +292,7 @@ void LRQPCalcDx( struct prob *problem,
     int i, j;
     int    info = 0;
     int    one  = 1;
+    int izero = 0;
     double pone =  1.0;
     double mone = -1.0;
     double zero =  0.0;
@@ -325,9 +331,14 @@ void LRQPCalcDx( struct prob *problem,
         dcopy_(n, r, &one, step->alpha, &one); // dalpha = r
 
         dgemv_("N", n,p,&mone, R, n, step->beta, &one, &pone, step->alpha, &one); // dalpha = dalpha - R*dbeta
+
+        //step->zeta[i] = r3[i] - (ZetaOnAlpha[i] * step->alpha[i]);
+        dcopy_(n, r3, &one, step->zeta, &one);
+        dgbmv_("N", n,n,&izero, &izero, &mone, ZetaOnAlpha, &one, step->alpha, &one, &pone, step->zeta, &one);
     
-    for (i=0;i<(*n);i++) step->zeta[i] = r3[i] - (ZetaOnAlpha[i] * step->alpha[i]);
-    for (i=0;i<(*n);i++) step->xi[i]   = r4[i] + (XiOnUminusAlpha[i] * step->alpha[i]);
+        //step->xi[i]   = r4[i] + (XiOnUminusAlpha[i] * step->alpha[i]);
+        dcopy_(n, r4, &one, step->xi, &one);
+        dgbmv_("N", n, n, &izero, &izero, &pone, XiOnUminusAlpha, &one, step->alpha, &one, &pone, step->xi, &one);
 
 }
 
@@ -379,6 +390,7 @@ void LowRankQP( int *n, int *m, int *p, int* method, int* verbose, int* niter,
     int one = 1;
     int izero = 0;
     double pone =  1.0;
+    double mone =  -1.0;
     double zero =  0.0;
 
     struct prob problem = { n, p, Q, c, A, b, u };
@@ -458,8 +470,15 @@ void LowRankQP( int *n, int *m, int *p, int* method, int* verbose, int* niter,
             XiOnUminusAlpha, buffPxP, buffPx1, R, r, w,
             r2, r3, r4, M, &ivars.t);
 
-        for (i=0;i<(*n);i++) r3[i] = ( ivars.t - (step.alpha[i] * step.zeta[i]) )/solution.alpha[i];
-        for (i=0;i<(*n);i++) r4[i] = ( ivars.t + (step.alpha[i] * step.xi[i]) )/UminusAlpha[i];
+        //r3[i] = ( ivars.t - (step.alpha[i] * step.zeta[i]) )/solution.alpha[i];
+        dcopy_(n, &ivars.t, &izero, r3, &one);
+        dgbmv_("N", n,n, &izero, &izero, &mone, step.alpha, &one, step.zeta, &one, &pone, r3, &one);
+        dtbsv_("U", "N", "N", n, &izero, solution.alpha, &one, r3, &one);
+
+        //r4[i] = ( ivars.t + (step.alpha[i] * step.xi[i]) )/UminusAlpha[i];
+        dcopy_(n, &ivars.t, &izero, r4, &one);
+        dgbmv_("N", n,n, &izero, &izero, &pone, step.alpha, &one, step.xi, &one, &pone, r4, &one);
+        dtbsv_("U", "N", "N", n, &izero, UminusAlpha, &one, r4, &one);
         
         LRQPCalcDx( &problem, &solution,
             &step, UminusAlpha, ZetaOnAlpha,
