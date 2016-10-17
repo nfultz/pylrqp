@@ -142,6 +142,7 @@ void LRQPCalcStats( int *n, int *m, int *p, double *Q, double *c, double *A,
     double zero =  0.0;
 
     dgemv_("T", n, m, &pone, Q, n, alpha, &one, &zero, w, &one ); // w = Q' * alpha
+    quad = ddot_(n, alpha, &one, w, &one );
 
 
     dcopy_(n, u, &one, UminusAlpha, &one);  // UminusAlpha = u
@@ -151,13 +152,11 @@ void LRQPCalcStats( int *n, int *m, int *p, double *Q, double *c, double *A,
     for (i=0;i<(*n);i++) ZetaOnAlpha[i] = zeta[i]/alpha[i];
 
 
-        dgemv_("N", n, p, &mone, A, n, beta, &one, &zero, r1, &one); // r1 = -A * beta
-        daxpy_(n, &mone, w, &one, r1, &one ); // r1= r1 - w
-        daxpy_(n, &mone, c, &one, r1, &one ); // r1= r1 - c
-        daxpy_(n, &mone, xi, &one, r1, &one ); // r1= r1 - xi
-        daxpy_(n, &pone, zeta, &one, r1, &one ); // r1= r1 + zeta
+        dgemv_("N", n, p, &mone, A, n, beta, &one, &mone, w, &one); // w = -A * beta -w
+        daxpy_(n, &mone, c, &one, w, &one ); // w= w - c
+        daxpy_(n, &mone, xi, &one, w, &one ); // w= w - xi
+        daxpy_(n, &pone, zeta, &one, w, &one ); // w= w + zeta
 
-        quad = ddot_(n, alpha, &one, w, &one );
 
 
         dcopy_(p, b, &one, r2, &one); // r2 = b
@@ -165,7 +164,7 @@ void LRQPCalcStats( int *n, int *m, int *p, double *Q, double *c, double *A,
         dgemv_("T", n, p, &mone, A, n, alpha, &one, &pone, r2, &one); // r2 = r2 - A' * alpha
         *dual = dasum_(p, r2, &one ); //sum(abs(r2))
 
-    *prim   = dasum_(n, r1, &one ); // sum(abs(r1))
+    *prim   = dasum_(n, w, &one ); // sum(abs(r1))
 
     *comp   = ddot_(n,  alpha, &one, zeta,  &one ) + ddot_(n, UminusAlpha, &one, xi,  &one );
 
