@@ -81,11 +81,13 @@ void LRQPInitPoint( int *n, int *p, double *Q, double *c, double *A,
 {
     int i;
     int one = 1;
+    int izero = 0;
     double pone =  1.0;
     double mone = -1.0;
     double zero =  0.0;
     for (i=0;i<(*n);i++) alpha[i] = u[i] > 1 ? EPSINIT : u[i] * EPSINIT;
-    for (i=0;i<(*p);i++) beta[i]  = 0.0;
+
+    dcopy_(p, &zero, &izero, beta, &one); // beta = 0
 
     dgemv_("T", n, n, &pone, Q, n, alpha, &one, &zero, w, &one ); // w = Q' * alpha
     for (i=0;i<(*n);i++) r1[i] += -w[i];
