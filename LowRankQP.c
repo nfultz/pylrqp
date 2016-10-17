@@ -9,8 +9,6 @@
 
 #define CHOL 2
 
-#define PRED 1
-#define CORR 2
 /**** BLAS ****/
 extern double dasum_(int*, double*, int*);
 
@@ -241,7 +239,7 @@ void LRQPCalcDx( int *n, int *p, double *Q, double *c,
     double *UminusAlpha, double *ZetaOnAlpha, double *XiOnUminusAlpha,
     double* buffPxP, double *buffPx1,
     double *R, double *r, double *r1, double* r2, double *r3,
-    double *r4, double* r5, double *D, double *M, double *t, int predcorr)
+    double *r4, double* r5, double *D, double *M, double *t)
 {
 
     int i, j;
@@ -406,7 +404,7 @@ void LowRankQP( int *n, int *m, int *p, int* method, int* verbose, int* niter,
         LRQPCalcDx( n, p, Q, c, A, b, u, alpha, beta, xi, zeta,
             dalpha, dbeta, dxi, dzeta, UminusAlpha, ZetaOnAlpha, 
             XiOnUminusAlpha, buffPxP, buffPx1, R, r, r1,
-            r2, r3, r4, r5, D, M, &t, PRED);
+            r2, r3, r4, r5, D, M, &t);
 
         for (i=0;i<(*n);i++) r3[i] = ( t - (dalpha[i] * dzeta[i]) )/alpha[i];
         for (i=0;i<(*n);i++) r4[i] = ( t + (dalpha[i] * dxi[i]) )/UminusAlpha[i];
@@ -414,7 +412,7 @@ void LowRankQP( int *n, int *m, int *p, int* method, int* verbose, int* niter,
         LRQPCalcDx( n, p, Q, c, A, b, u, alpha, beta, xi, zeta,
             dalpha, dbeta, dxi, dzeta, UminusAlpha, ZetaOnAlpha,
             XiOnUminusAlpha, buffPxP, buffPx1, R, r, r1,
-            r2, r3, r4, r5, D, M, &t, CORR);
+            r2, r3, r4, r5, D, M, &t);
 
         LRQPStep( n, p, alpha, beta, xi, zeta, dalpha, dbeta, dxi, dzeta,
             UminusAlpha, &mult );
