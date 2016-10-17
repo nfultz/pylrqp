@@ -79,7 +79,7 @@ void LRQPHeader()
 
 void LRQPInitPoint( int *n, int *p, double *Q, double *c, double *A,
     double *b, double *u, double *alpha, double* beta, double *xi, double *zeta,
-    double *w, double *temp )
+    double *w, double *r1 )
 {
     int i;
     int one = 1;
@@ -90,12 +90,12 @@ void LRQPInitPoint( int *n, int *p, double *Q, double *c, double *A,
     for (i=0;i<(*p);i++) beta[i]  = 0.0;
 
     dgemv_("T", n, n, &pone, Q, n, alpha, &one, &zero, w, &one ); // w = Q' * alpha
-    for (i=0;i<(*n);i++) temp[i] += -w[i];
-    daxpy_(n, &mone, c, &one, temp, &one); //temp = temp - c
+    for (i=0;i<(*n);i++) r1[i] += -w[i];
+    daxpy_(n, &mone, c, &one, r1, &one); //temp = temp - c
     for (i=0;i<(*n);i++)
     {
-        xi[i]   = MAX(EPSINIT,temp[i]);
-        zeta[i] = MAX(EPSINIT,xi[i]-temp[i]);
+        xi[i]   = MAX(EPSINIT,r1[i]);
+        zeta[i] = MAX(EPSINIT,xi[i]-r1[i]);
     }
 }
 
@@ -452,9 +452,9 @@ int main(){
 
   printf("Sum of dvec: %f\n", (dasum_(&n, dvec, &p)));
 
-  PrintMatrix("alpha", alpha, &n, &p); 
-  PrintMatrix("beta", beta, &p, &p); 
-  PrintMatrix("xi", xi, &n, &p); 
-  PrintMatrix("zeta", zeta, &n, &p); 
+  PrintMatrix("alpha", alpha, &n, &p);
+  PrintMatrix("beta", beta, &p, &p);
+  PrintMatrix("xi", xi, &n, &p);
+  PrintMatrix("zeta", zeta, &n, &p);
 
 }
