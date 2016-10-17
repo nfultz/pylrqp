@@ -139,7 +139,7 @@ void LRQPInitPoint( int *n, int *p, double *Q, double *c, double *A,
 *
 ******************************************************************************/
 
-void LRQPCalcStats( int *n, int *m, int *p, double *Q, double *c, double *A,
+void LRQPCalcStats( int *n, int *p, double *Q, double *c, double *A,
     double *b, double *u,
     struct sol *solution,
     double *UminusAlpha, double *XiOnUminusAlpha, double *ZetaOnAlpha, 
@@ -154,7 +154,7 @@ void LRQPCalcStats( int *n, int *m, int *p, double *Q, double *c, double *A,
     double mone = -1.0;
     double zero =  0.0;
 
-    dgemv_("T", n, m, &pone, Q, n, solution->alpha, &one, &zero, w, &one ); // w = Q' * alpha
+    dgemv_("T", n, n, &pone, Q, n, solution->alpha, &one, &zero, w, &one ); // w = Q' * alpha
     quad = ddot_(n, solution->alpha, &one, w, &one );
 
 
@@ -396,7 +396,7 @@ void LowRankQP( int *n, int *m, int *p, int* method, int* verbose, int* niter,
 
     for (i=0;i<(*niter);i++)
     {
-        LRQPCalcStats( n, m, p, Q, c, A, b, u, &solution,
+        LRQPCalcStats( n, p, Q, c, A, b, u, &solution,
             UminusAlpha, XiOnUminusAlpha, ZetaOnAlpha, w,
             r2, D, &ivars);
 
