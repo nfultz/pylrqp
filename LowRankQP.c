@@ -77,7 +77,7 @@ void LRQPHeader()
 
 void LRQPInitPoint( int *n, int *p, double *Q, double *c, double *A,
     double *b, double *u, double *alpha, double* beta, double *xi, double *zeta,
-    double *w, double *r1 )
+    double *w)
 {
     int i;
     int one = 1;
@@ -89,13 +89,12 @@ void LRQPInitPoint( int *n, int *p, double *Q, double *c, double *A,
 
     dcopy_(p, &zero, &izero, beta, &one); // beta = 0
 
-    dgemv_("T", n, n, &pone, Q, n, alpha, &one, &zero, w, &one ); // w = Q' * alpha
-    for (i=0;i<(*n);i++) r1[i] += -w[i];
-    daxpy_(n, &mone, c, &one, r1, &one); //temp = temp - c
+    dgemv_("T", n, n, &mone, Q, n, alpha, &one, &zero, w, &one ); // w = - Q' * alpha
+    daxpy_(n, &mone, c, &one, w, &one); //w = w - c
     for (i=0;i<(*n);i++)
     {
-        xi[i]   = MAX(EPSINIT,r1[i]);
-        zeta[i] = MAX(EPSINIT,xi[i]-r1[i]);
+        xi[i]   = MAX(EPSINIT,w[i]);
+        zeta[i] = MAX(EPSINIT,xi[i]-w[i]);
     }
 }
 
@@ -375,7 +374,7 @@ void LowRankQP( int *n, int *m, int *p, int* method, int* verbose, int* niter,
 
     /* Main Loop */
     if ( *verbose ) LRQPHeader();
-    LRQPInitPoint( n, p, Q, c, A, b, u, alpha, beta, xi, zeta, w, r1 );
+    LRQPInitPoint( n, p, Q, c, A, b, u, alpha, beta, xi, zeta, w);
 
     for (i=0;i<(*niter);i++)
     {
