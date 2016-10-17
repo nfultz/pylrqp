@@ -233,8 +233,8 @@ void LRQPSummary( int i, int niter, struct IterVars *ivars)
 *    R      = QpIpmSolve( PREDinfo, Q, D, A );
 *    r3     = - zeta;    OR    r3 = (t - Dalpha.*Dzeta)./alpha - zeta;
 *    r4     = - xi;      OR    r4 = (t + Dalpha.*Dxi )./UminusAlpha - xi;
-*    r5     = w + r3 - r4
-*    r      = QpIpmSolve( info, Q, D, r5 );
+*    r     = w + r3 - r4
+*    r      = QpIpmSolve( info, Q, D, r );
 *    Dbeta  = (A'*R) \ (A'*r - r2);
 *    Dalpha = r - R*Dbeta;
 *    Dzeta  = r3 - ZetaOnAlpha.*Dalpha;
@@ -248,7 +248,7 @@ void LRQPCalcDx( int *n, int *p, double *Q, double *c,
     double *UminusAlpha, double *ZetaOnAlpha, double *XiOnUminusAlpha,
     double* buffPxP, double *buffPx1,
     double *R, double *r, double *w, double* r2, double *r3,
-    double *r4, double* r5,  double *M, double *t)
+    double *r4, double *M, double *t)
 {
 
     int i, j;
@@ -262,10 +262,10 @@ void LRQPCalcDx( int *n, int *p, double *Q, double *c,
     daxpy_(n, &mone, zeta, &one, r3, &one); //r3 -= zeta
     daxpy_(n, &mone, xi,   &one, r4, &one); // r4 -= xi
 
-    for (i=0;i<(*n);i++) r5[i] = w[i] + r3[i] - r4[i];
+    for (i=0;i<(*n);i++) r[i] = w[i] + r3[i] - r4[i];
 
         //LRQPSolve( n, m, &one, method, Q, D, r5, r, M, pivN, buffMx1, P, Beta, Lambda );
-        dcopy_(n, r5, &one, r, &one); // copy r5 to r
+        //dcopy_(n, r5, &one, r, &one); // copy r5 to r
         dpotrs_("L", n, &one, M, n, r, n, &info ); // r = M^-1 * r
 
         dcopy_(p, r2, &one, buffPx1, &one); // buffPx1 = r2
@@ -367,7 +367,6 @@ void LowRankQP( int *n, int *m, int *p, int* method, int* verbose, int* niter,
     double *r2 = (double *) calloc( *p, sizeof(double) );;
     double *r3 = (double *) calloc( *n, sizeof(double) );
     double *r4 = (double *) calloc( *n, sizeof(double) );
-    double *r5 = (double *) calloc( *n, sizeof(double) );
     double *D  = (double *) calloc( *n, sizeof(double) );
     double *r  = (double *) calloc( *n, sizeof(double) );
     double *R  = (double *) calloc( (*n)*(*p), sizeof(double) );;
@@ -411,7 +410,7 @@ void LowRankQP( int *n, int *m, int *p, int* method, int* verbose, int* niter,
         LRQPCalcDx( n, p, Q, c, A, b, u, alpha, beta, xi, zeta,
             dalpha, dbeta, dxi, dzeta, UminusAlpha, ZetaOnAlpha, 
             XiOnUminusAlpha, buffPxP, buffPx1, R, r, w,
-            r2, r3, r4, r5, M, &ivars.t);
+            r2, r3, r4, M, &ivars.t);
 
         for (i=0;i<(*n);i++) r3[i] = ( ivars.t - (dalpha[i] * dzeta[i]) )/alpha[i];
         for (i=0;i<(*n);i++) r4[i] = ( ivars.t + (dalpha[i] * dxi[i]) )/UminusAlpha[i];
@@ -419,7 +418,7 @@ void LowRankQP( int *n, int *m, int *p, int* method, int* verbose, int* niter,
         LRQPCalcDx( n, p, Q, c, A, b, u, alpha, beta, xi, zeta,
             dalpha, dbeta, dxi, dzeta, UminusAlpha, ZetaOnAlpha,
             XiOnUminusAlpha, buffPxP, buffPx1, R, r, w,
-            r2, r3, r4, r5, M, &ivars.t);
+            r2, r3, r4, M, &ivars.t);
 
         LRQPStep( n, p, alpha, beta, xi, zeta, dalpha, dbeta, dxi, dzeta,
             UminusAlpha, &ivars.mult );
@@ -430,7 +429,7 @@ void LowRankQP( int *n, int *m, int *p, int* method, int* verbose, int* niter,
     /* Free Memory */
     free(dalpha);      free(dxi);             free(dzeta);
     free(UminusAlpha); free(XiOnUminusAlpha); free(ZetaOnAlpha);
-    free(r3); free(r4); free(r5);
+    free(r3); free(r4);
     free(D);  free(w);  free(r);
         
         free( dbeta );
