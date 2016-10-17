@@ -50,6 +50,16 @@ struct IterVars {
     double t   ;
 };
 
+struct prob {
+    int *n;
+    int *p;
+    double *Q;
+    double *c;
+    double *A;
+    double *b;
+    double *u;
+};
+
 struct sol {
     double* alpha;
     double* beta;
@@ -94,8 +104,7 @@ void LRQPHeader()
 
 /*****************************************************************************/
 
-void LRQPInitPoint( int *n, int *p, double *Q, double *c, double *A,
-    double *b, double *u, struct sol *solution, double *w)
+void LRQPInitPoint( struct prob *problem, struct sol *solution, double *w)
 {
     int i;
     int one = 1;
@@ -104,12 +113,15 @@ void LRQPInitPoint( int *n, int *p, double *Q, double *c, double *A,
     double mone = -1.0;
     double zero =  0.0;
 
-    for (i=0;i<(*n);i++) solution->alpha[i] = u[i] > 1 ? EPSINIT : u[i] * EPSINIT;
+    int *n = problem->n;
+    int *p = problem->p;
+
+    for (i=0;i<(*n);i++) solution->alpha[i] = problem->u[i] > 1 ? EPSINIT : problem->u[i] * EPSINIT;
 
     dcopy_(p, &zero, &izero, solution->beta, &one); // beta = 0
 
-    dgemv_("T", n, n, &mone, Q, n, solution->alpha, &one, &zero, w, &one ); // w = - Q' * alpha
-    daxpy_(n, &mone, c, &one, w, &one); //w = w - c
+    dgemv_("T", n, n, &mone, problem->Q, n, solution->alpha, &one, &zero, w, &one ); // w = - Q' * alpha
+    daxpy_(n, &mone, problem->c, &one, w, &one); //w = w - c
     for (i=0;i<(*n);i++)
     {
         solution->xi[i]   = MAX(EPSINIT,w[i]);
@@ -139,8 +151,7 @@ void LRQPInitPoint( int *n, int *p, double *Q, double *c, double *A,
 *
 ******************************************************************************/
 
-void LRQPCalcStats( int *n, int *p, double *Q, double *c, double *A,
-    double *b, double *u,
+void LRQPCalcStats( struct prob *problem,
     struct sol *solution,
     double *UminusAlpha, double *XiOnUminusAlpha, double *ZetaOnAlpha, 
     double* w, double *r2, double *D, struct IterVars *ivars)
@@ -154,27 +165,30 @@ void LRQPCalcStats( int *n, int *p, double *Q, double *c, double *A,
     double mone = -1.0;
     double zero =  0.0;
 
-    dgemv_("T", n, n, &pone, Q, n, solution->alpha, &one, &zero, w, &one ); // w = Q' * alpha
+    int *n = problem->n;
+    int *p = problem->p;
+
+    dgemv_("T", n, n, &pone, problem->Q, n, solution->alpha, &one, &zero, w, &one ); // w = Q' * alpha
     quad = ddot_(n, solution->alpha, &one, w, &one );
 
 
-    dcopy_(n, u, &one, UminusAlpha, &one);  // UminusAlpha = u
+    dcopy_(n, problem->u, &one, UminusAlpha, &one);  // UminusAlpha = u
     daxpy_(n, &mone, solution->alpha, &one, UminusAlpha, &one); //// UminusAlpha = UminusAlpha + -1 * alpha
 
     for (i=0;i<(*n);i++) XiOnUminusAlpha[i] = solution->xi[i]/UminusAlpha[i];
     for (i=0;i<(*n);i++) ZetaOnAlpha[i] = solution->zeta[i]/solution->alpha[i];
 
 
-        dgemv_("N", n, p, &mone, A, n, solution->beta, &one, &mone, w, &one); // w = -A * beta -w
-        daxpy_(n, &mone, c, &one, w, &one ); // w= w - c
+        dgemv_("N", n, p, &mone, problem->A, n, solution->beta, &one, &mone, w, &one); // w = -A * beta -w
+        daxpy_(n, &mone, problem->c, &one, w, &one ); // w= w - c
         daxpy_(n, &mone, solution->xi, &one, w, &one ); // w= w - xi
         daxpy_(n, &pone, solution->zeta, &one, w, &one ); // w= w + zeta
 
 
 
-        dcopy_(p, b, &one, r2, &one); // r2 = b
+        dcopy_(p, problem->b, &one, r2, &one); // r2 = b
 
-        dgemv_("T", n, p, &mone, A, n, solution->alpha, &one, &pone, r2, &one); // r2 = r2 - A' * alpha
+        dgemv_("T", n, p, &mone, problem->A, n, solution->alpha, &one, &pone, r2, &one); // r2 = r2 - A' * alpha
 
     ivars->dual = dasum_(p, r2, &one ); //sum(abs(r2))
 
@@ -182,9 +196,9 @@ void LRQPCalcStats( int *n, int *p, double *Q, double *c, double *A,
 
     ivars->comp   = ddot_(n,  solution->alpha, &one, solution->zeta,  &one ) + ddot_(n, UminusAlpha, &one, solution->xi,  &one );
 
-    cTalpha = ddot_(n, c, &one, solution->alpha, &one );
+    cTalpha = ddot_(n, problem->c, &one, solution->alpha, &one );
 
-    ivars->gap = fabs( quad + cTalpha + ddot_(n, u, &one, solution->xi, &one ) + ddot_(p, b, &one, solution->beta, &one ) );
+    ivars->gap = fabs( quad + cTalpha + ddot_(n, problem->u, &one, solution->xi, &one ) + ddot_(p, problem->b, &one, solution->beta, &one ) );
     ivars->term   = ivars->comp / ( fabs( 0.5*quad + cTalpha) + 1.0);
     temp    = (1.0 - ivars->mult + EPSIPM)/(10.0 + ivars->mult);
     ivars->t      = ivars->comp*(temp*temp)/(2*(*n));
@@ -250,8 +264,7 @@ void LRQPSummary( int i, int niter, struct IterVars *ivars)
 *
 ******************************************************************************/
 
-void LRQPCalcDx( int *n, int *p, double *Q, double *c,
-    double *A, double *b, double * u,
+void LRQPCalcDx( struct prob *problem,
     struct sol *solution,
     struct sol *step,
     double *UminusAlpha, double *ZetaOnAlpha, double *XiOnUminusAlpha,
@@ -267,6 +280,10 @@ void LRQPCalcDx( int *n, int *p, double *Q, double *c,
     double mone = -1.0;
     double zero =  0.0;
 
+    int *n = problem->n;
+    int *p = problem->p;
+
+
 
     daxpy_(n, &mone, solution->zeta, &one, r3, &one); //r3 -= zeta
     daxpy_(n, &mone, solution->xi,   &one, r4, &one); // r4 -= xi
@@ -279,9 +296,9 @@ void LRQPCalcDx( int *n, int *p, double *Q, double *c,
 
         dcopy_(p, r2, &one, buffPx1, &one); // buffPx1 = r2
 
-        dgemv_("T", n, p, &pone, A, n, r, &one, &mone, buffPx1, &one); // buffPx1 = A' * r - buffPx1
+        dgemv_("T", n, p, &pone, problem->A, n, r, &one, &mone, buffPx1, &one); // buffPx1 = A' * r - buffPx1
         
-        dgemm_("T","N", p,p,n,&pone, A, n, R, n, &zero, buffPxP, p); // buffPxP = A' * R
+        dgemm_("T","N", p,p,n,&pone, problem->A, n, R, n, &zero, buffPxP, p); // buffPxP = A' * R
 
         dpotrf_( "L", p, buffPxP, p, &info ); // Cholesky Factor of buffPxP
 
@@ -349,6 +366,8 @@ void LowRankQP( int *n, int *m, int *p, int* method, int* verbose, int* niter,
     double pone =  1.0;
     double zero =  0.0;
 
+    struct prob problem = { n, p, Q, c, A, b, u };
+
     /* Iteration Display variables */
     struct IterVars ivars = {
       .mult = 0.0,
@@ -392,11 +411,11 @@ void LowRankQP( int *n, int *m, int *p, int* method, int* verbose, int* niter,
 
     /* Main Loop */
     if ( *verbose ) LRQPHeader();
-    LRQPInitPoint( n, p, Q, c, A, b, u, &solution, w);
+    LRQPInitPoint( &problem, &solution, w);
 
     for (i=0;i<(*niter);i++)
     {
-        LRQPCalcStats( n, p, Q, c, A, b, u, &solution,
+        LRQPCalcStats( &problem, &solution,
             UminusAlpha, XiOnUminusAlpha, ZetaOnAlpha, w,
             r2, D, &ivars);
 
@@ -406,20 +425,20 @@ void LowRankQP( int *n, int *m, int *p, int* method, int* verbose, int* niter,
         //LRQPFactorize( n, m, method, Q, D, M, pivN, buffNxM, P, Beta, Lambda,
         //    LambdaTemp, T );
         //MatrixMatrixCopy( M, Q, n, n );
-        dcopy_(&n2, Q, &one, M, &one); // copy Q into M
+        dcopy_(&n2, problem.Q, &one, M, &one); // copy Q into M
         
         daxpy_(n,&pone,D, &one, M, &np1); // diag(M) = Diag(M) + D
 
         dpotrf_( "L", n, M, n, &info ); // Cholesky factor of M
 
         //LRQPSolve( n, m, p, method, Q, D, A, R, M, pivN, buffMxP, P, Beta, Lambda );
-        dcopy_(&np, A, &one, R, &one); // copy A to R
+        dcopy_(&np, problem.A, &one, R, &one); // copy A to R
         dpotrs_("L", n, p, M, n, R, n, &info ); // R = M^-1 * R
 
         dcopy_(n,&zero, &izero, r3, &one); // r3 = 0
         dcopy_(n,&zero, &izero, r4, &one); // r4 = 0
         
-        LRQPCalcDx( n, p, Q, c, A, b, u, &solution,
+        LRQPCalcDx( &problem, &solution,
             &step, UminusAlpha, ZetaOnAlpha, 
             XiOnUminusAlpha, buffPxP, buffPx1, R, r, w,
             r2, r3, r4, M, &ivars.t);
@@ -427,7 +446,7 @@ void LowRankQP( int *n, int *m, int *p, int* method, int* verbose, int* niter,
         for (i=0;i<(*n);i++) r3[i] = ( ivars.t - (step.alpha[i] * step.zeta[i]) )/solution.alpha[i];
         for (i=0;i<(*n);i++) r4[i] = ( ivars.t + (step.alpha[i] * step.xi[i]) )/UminusAlpha[i];
         
-        LRQPCalcDx( n, p, Q, c, A, b, u, &solution,
+        LRQPCalcDx( &problem, &solution,
             &step, UminusAlpha, ZetaOnAlpha,
             XiOnUminusAlpha, buffPxP, buffPx1, R, r, w,
             r2, r3, r4, M, &ivars.t);
