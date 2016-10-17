@@ -7,8 +7,6 @@
 #define MAX(A,B) ( (A) > (B) ? (A):(B))
 #define MIN(A,B) ( (A) < (B) ? (A):(B))
 
-#define CHOL 2
-
 /**** BLAS ****/
 extern double dasum_(int*, double*, int*);
 
@@ -29,6 +27,10 @@ extern void   dgemm_(const char *transa, const char *transb, const int *m,
         const int *n, const int *k, const double *alpha, const double *a, const
         int *lda, const double *b, const int *ldb, const double *beta, double
         *c, const int *ldc);
+
+extern void dtbsv_(const   char*   UPLO, const char*   TRANS, const char* DIAG,
+        const int*     N, const int*     K, const double* A, const int*     LDA,
+        const double* X, const int*     INCX);
 
 /**** LAPACK ****/
 
@@ -158,6 +160,7 @@ void LRQPCalcStats( struct prob *problem,
 {
     int i;
     int one = 1;
+    int izero = 0;
     double quad;
     double cTalpha;
     double temp;
@@ -175,8 +178,11 @@ void LRQPCalcStats( struct prob *problem,
     dcopy_(n, problem->u, &one, UminusAlpha, &one);  // UminusAlpha = u
     daxpy_(n, &mone, solution->alpha, &one, UminusAlpha, &one); //// UminusAlpha = UminusAlpha + -1 * alpha
 
-    for (i=0;i<(*n);i++) XiOnUminusAlpha[i] = solution->xi[i]/UminusAlpha[i];
-    for (i=0;i<(*n);i++) ZetaOnAlpha[i] = solution->zeta[i]/solution->alpha[i];
+    dcopy_(n, solution->xi, &one, XiOnUminusAlpha, &one);
+    dtbsv_("U", "N", "N", n, &izero, UminusAlpha, &one, XiOnUminusAlpha, &one);  // XiOnUminusAlpha = xi / UminusAlpha
+    
+    dcopy_(n, solution->zeta, &one, ZetaOnAlpha, &one);
+    dtbsv_("U", "N", "N", n, &izero, solution->alpha, &one, ZetaOnAlpha, &one);  // ZetaOnAlpha = zeta / Alpha
 
 
         dgemv_("N", n, p, &mone, problem->A, n, solution->beta, &one, &mone, w, &one); // w = -A * beta -w
