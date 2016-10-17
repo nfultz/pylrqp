@@ -294,7 +294,11 @@ void LRQPCalcDx( struct prob *problem,
     daxpy_(n, &mone, solution->zeta, &one, r3, &one); //r3 -= zeta
     daxpy_(n, &mone, solution->xi,   &one, r4, &one); // r4 -= xi
 
-    for (i=0;i<(*n);i++) r[i] = w[i] + r3[i] - r4[i];
+    // r = w + r3 - r4
+    dcopy_(n, w, &one, r, &one);
+    daxpy_(n, &pone, r3, &one, r, &one);
+    daxpy_(n, &mone, r4, &one, r, &one);
+
 
         //LRQPSolve( n, m, &one, method, Q, D, r5, r, M, pivN, buffMx1, P, Beta, Lambda );
         //dcopy_(n, r5, &one, r, &one); // copy r5 to r
