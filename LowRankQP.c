@@ -252,7 +252,7 @@ void LRQPCalcDx( int *n, int *p, double *Q, double *c,
     double *zeta, double *dalpha, double* dbeta, double *dxi, double *dzeta,
     double *UminusAlpha, double *ZetaOnAlpha, double *XiOnUminusAlpha,
     double* buffPxP, double *buffPx1,
-    double *R, double *r, double *r1, double* r2, double *r3,
+    double *R, double *r, double *w, double* r2, double *r3,
     double *r4, double* r5, double *D, double *M, double *t)
 {
 
@@ -267,7 +267,7 @@ void LRQPCalcDx( int *n, int *p, double *Q, double *c,
     daxpy_(n, &mone, zeta, &one, r3, &one); //r3 -= zeta
     daxpy_(n, &mone, xi,   &one, r4, &one); // r4 -= xi
 
-    for (i=0;i<(*n);i++) r5[i] = r1[i] + r3[i] - r4[i];
+    for (i=0;i<(*n);i++) r5[i] = w[i] + r3[i] - r4[i];
 
         //LRQPSolve( n, m, &one, method, Q, D, r5, r, M, pivN, buffMx1, P, Beta, Lambda );
         dcopy_(n, r5, &one, r, &one); // copy r5 to r
@@ -385,9 +385,6 @@ void LowRankQP( int *n, int *m, int *p, int* method, int* verbose, int* niter,
     double *M = (double *) calloc( (*n)*(*n), sizeof(double) );;
 
 
-    /* Vectors to be created if p!=0 */
-
-
     /* Main Loop */
     if ( *verbose ) LRQPHeader();
     LRQPInitPoint( n, p, Q, c, A, b, u, alpha, beta, xi, zeta, w);
@@ -419,7 +416,7 @@ void LowRankQP( int *n, int *m, int *p, int* method, int* verbose, int* niter,
         
         LRQPCalcDx( n, p, Q, c, A, b, u, alpha, beta, xi, zeta,
             dalpha, dbeta, dxi, dzeta, UminusAlpha, ZetaOnAlpha, 
-            XiOnUminusAlpha, buffPxP, buffPx1, R, r, r1,
+            XiOnUminusAlpha, buffPxP, buffPx1, R, r, w,
             r2, r3, r4, r5, D, M, &ivars.t);
 
         for (i=0;i<(*n);i++) r3[i] = ( ivars.t - (dalpha[i] * dzeta[i]) )/alpha[i];
@@ -427,7 +424,7 @@ void LowRankQP( int *n, int *m, int *p, int* method, int* verbose, int* niter,
         
         LRQPCalcDx( n, p, Q, c, A, b, u, alpha, beta, xi, zeta,
             dalpha, dbeta, dxi, dzeta, UminusAlpha, ZetaOnAlpha,
-            XiOnUminusAlpha, buffPxP, buffPx1, R, r, r1,
+            XiOnUminusAlpha, buffPxP, buffPx1, R, r, w,
             r2, r3, r4, r5, D, M, &ivars.t);
 
         LRQPStep( n, p, alpha, beta, xi, zeta, dalpha, dbeta, dxi, dzeta,
