@@ -442,18 +442,19 @@ void LowRankQP( int *n, int *m, int *p, int* method, int* verbose, int* niter,
 }
 
 int main(){
-  int n = 2, m = 2, p = 1, method = 2,  verbose=0, niter=200;
+  int n = 3, m = 3, p = 1, method = 2,  verbose=0, niter=200;
   
   double alpha[] = {0,0,0,0,0,0};
   double  beta[] = {0,0,0,0,0,0};
   double    xi[] = {0,0,0,0,0,0};
   double  zeta[] = {0,0,0,0,0,0};
 
-  double Vmat[] = {20, -1.54, -1.54, 9.10};
-  double dvec[] = {0.2,24.2};
-  double Amat[] = {-1, 4};
-  double bvec[] = {0.2};
-  double uvec[] = {1,1};
+  double Vmat[] = {7, 0.627, -1.187, 0.627, 0.056, -0.106, -1.187, -0.106, 
+  1.452};
+  double dvec[] = {-4.931, -0.442, 1.335};
+  double Amat[] = {1, 1, 1};
+  double bvec[] = {1};
+  double uvec[] = {1,1,1};
 
   LowRankQP( &n, &m, &p, &method, &verbose, &niter,
               Vmat, dvec, Amat, bvec, uvec,
