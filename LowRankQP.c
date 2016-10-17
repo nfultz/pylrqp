@@ -327,7 +327,9 @@ void LowRankQP( int *n, int *m, int *p, int* method, int* verbose, int* niter,
     int info = 0;
     int n2 = *n * *n;
     int np = *n * *p;
+    int np1 = *n + 1;
     int one = 1;
+    double pone =  1.0;
 
     /* Iteration Display variables */
     double mult = 0.0;
@@ -388,7 +390,7 @@ void LowRankQP( int *n, int *m, int *p, int* method, int* verbose, int* niter,
         //MatrixMatrixCopy( M, Q, n, n );
         dcopy_(&n2, Q, &one, M, &one); // copy Q into M
         
-        for (int i=0;i<(*n);i++) M[i+i*(*n)] += D[i];// diag(M) = Diag(M) + D
+        daxpy_(n,&pone,D, &one, M, &np1); // diag(M) = Diag(M) + D
 
         dpotrf_( "L", n, M, n, &info ); // Cholesky factor of M
 
