@@ -1,4 +1,3 @@
-
 #include <math.h>
 #include <stdio.h>
 #include <time.h>
@@ -12,7 +11,7 @@
 #define PRED 1
 #define CORR 2
 /**** BLAS ****/
-extern double dasum_(int*, double*, int*);
+extern double dasum_(const int*, const double*, const int*);
 
 extern void daxpy_(const int *n, const double *alpha, const double *dx, const
         int *incx, double *dy, const int *incy);
@@ -41,7 +40,7 @@ extern void dpotrs_(const char* uplo, const int* n,
                  const int* ldb, int* info);
 
 
-/*****************************************************************************n
+/*****************************************************************************/
 
 /* Global Variables */
 #define EPSTERM   5.0E-11
@@ -51,6 +50,78 @@ extern void dpotrs_(const char* uplo, const int* n,
 #define EPSPERT   1.0E-14
 
 /*****************************************************************************/
+
+
+/* C <-> Fortran interface for more clarity and type safety. */
+
+/* takes the sum of the absolute values */
+static inline double dasum(const int n, const double* dx, const int incx)
+{
+    return dasum_(&n, dx, &incx);
+}
+
+/* constant times a vector plus a vector. */
+static inline void daxpy(const int n, const double* alpha, const double *dx,
+                         const int incx, double* dy, const int incy)
+{
+    return daxpy_(&n, alpha, dx, &incx, dy, &incy);
+}
+
+/* copies a vector, x, to a vector, y. */
+static inline void dcopy(const int n, const double *dx, const int incx,
+                         double *dy, const int incy)
+{
+    return dcopy_(&n, dx, &incx, dy, &incy);
+}
+
+/* forms the dot product of two vectors. */
+static inline double ddot(const int n, const double *dx, const int incx,
+                          const double *dy, const int incy)
+{
+    return ddot_(&n, dx, &incx, dy, &incy);
+}
+
+/* performs one of the matrix-vector operations:
+ *
+ * y := alpha * A * x + beta * y
+ * y := alpha * A ** T * x + beta * y
+ *
+ * where alpha and beta are scalars, x and y are vectors and A is an
+ * m by n matrix.
+*/
+static inline void dgemv(const char *trans, const int m, const int n,
+                         const double alpha, const double *a, const int lda,
+                         const double *x, const int incx, const double beta,
+                         double *y, const int incy)
+{
+    return dgemv_(trans, &m, &n, &alpha, a, &lda, x, &incx, &beta, y, &incy);
+}
+
+/* performs one of the matrix-matrix operations
+ *
+ * C := alpha * op(A) * op(B) + beta * C,
+ *
+ * where op(X) is one of
+ *
+ * op(X) = X
+ * op(X) = X ** T
+ *
+ * alpha and beta are scalars, and A, B and C are matrices, with op(A)
+ * an m by k matrix, op(B) a k by n matrix and C an m by n matrix.
+*/
+static inline void dgemm(const char *transa, const char *transb, const int m,
+                         const int n, const int k, const double alpha,
+                         const double *a, const int lda, const double *b,
+                         const int ldb, const double beta, double *c,
+                         const int ldc)
+{
+    return dgemm_(transa, transb, &m, &n, &k, &alpha, a, &lda, b, &ldb, &beta, c, &ldc);
+}
+
+
+
+/*****************************************************************************/
+
 
 void PrintMatrix( char* name, double* vals, int* rows, int* cols )
 {
