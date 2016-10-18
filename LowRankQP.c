@@ -354,9 +354,8 @@ void LRQPCalcDx( struct prob *problem,
 
         dcopy_(p, buffPx1, &one, step->beta, &one); //dbeta = buffPx1
 
-        dcopy_(n, r, &one, step->alpha, &one); // dalpha = r
-
-        dgemv_("N", n,p,&mone, R, n, step->beta, &one, &pone, step->alpha, &one); // dalpha = dalpha - R*dbeta
+        dcopy_(n, r, &one, step->alpha, &one);
+        dgemv_("N", n,p,&mone, R, n, step->beta, &one, &pone, step->alpha, &one); // dalpha = r - R*dbeta
 
         //step->zeta[i] = r3[i] - (ZetaOnAlpha[i] * step->alpha[i]);
         dcopy_(n, r3, &one, step->zeta, &one);
@@ -433,10 +432,10 @@ void LowRankQP( int *n, int *m, int *p, int* method, int* verbose, int* niter,
     struct sol step;
 
     /* Step direction vectors */
-    step.alpha = (double *) calloc( (*n), sizeof(double) );
-    step.beta  = (double *) calloc( (*p), sizeof(double) );
-    step.xi    = (double *) calloc( (*n), sizeof(double) );
-    step.zeta  = (double *) calloc( (*n), sizeof(double) );
+    step.alpha = (double *) calloc( 3*(*n)+*p, sizeof(double) );
+    step.beta  = step.alpha+*n;// (double *) calloc( (*p), sizeof(double) );
+    step.xi    = step.beta+*p;//(double *) calloc( (*n), sizeof(double) );
+    step.zeta  = step.xi+*n;//(double *) calloc( (*n), sizeof(double) );
 
     /* Some repeatedly occuring vectors */
     double *UminusAlpha     = (double *) calloc( *n, sizeof(double) );
@@ -444,7 +443,7 @@ void LowRankQP( int *n, int *m, int *p, int* method, int* verbose, int* niter,
     double *ZetaOnAlpha     = (double *) calloc( *n, sizeof(double) );
 
     /* Some vectors used during calculations */
-    double *w  = (double *) calloc( *m, sizeof(double) );
+    double *w  = (double *) calloc( *n, sizeof(double) );
     double *r2 = (double *) calloc( *p, sizeof(double) );;
     double *r3 = (double *) calloc( *n, sizeof(double) );
     double *r4 = (double *) calloc( *n, sizeof(double) );
@@ -507,12 +506,11 @@ void LowRankQP( int *n, int *m, int *p, int* method, int* verbose, int* niter,
     LRQPSummary( i, *niter, &ivars);
 
     /* Free Memory */
-    free(step.alpha);      free(step.xi);             free(step.zeta);
+    free(step.alpha);
     free(UminusAlpha); free(XiOnUminusAlpha); free(ZetaOnAlpha);
     free(r3); free(r4);
     free(D);  free(w);  free(r);
         
-        free( step.beta );
         free( r2 );
         free( R );
         free( buffPxP );
