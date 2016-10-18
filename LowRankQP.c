@@ -9,6 +9,9 @@
 
 /**** BLAS ****/
 extern double dasum_(int*, double*, int*);
+extern int idamax_( const int*     N, const double* DX, const int*     INCX );
+
+extern void dscal_( const int*     N, const double* DA, const double* DX, const int*     INCX );
 
 extern void daxpy_(const int *n, const double *alpha, const double *dx, const
         int *incx, double *dy, const int *incy);
@@ -122,13 +125,22 @@ void LRQPInitPoint( struct prob *problem, struct sol *solution, double *w)
 
     int *n = problem->n;
     int *p = problem->p;
+    int n2 = *n * *n;
+
+
+    // Scale Q and c down
+    double vi = 1.0 / problem->Q[idamax_(&n2, problem->Q, &one)];
+    dscal_(&n2, &vi, problem->Q, &one);
+    dscal_(n, &vi, problem->c, &one);
+
 
     for (i=0;i<(*n);i++) solution->alpha[i] = problem->u[i] > 1 ? EPSINIT : problem->u[i] * EPSINIT;
 
     dcopy_(p, &zero, &izero, solution->beta, &one); // beta = 0
 
-    dgemv_("T", n, n, &mone, problem->Q, n, solution->alpha, &one, &zero, w, &one ); // w = - Q' * alpha
-    daxpy_(n, &mone, problem->c, &one, w, &one); //w = w - c
+    dcopy_(n, problem->c, &one, w, &one); //w = c
+    dgemv_("N", n, n, &mone, problem->Q, n, solution->alpha, &one, &mone, w, &one ); // w = - Q * alpha - c
+
     for (i=0;i<(*n);i++)
     {
         solution->xi[i]   = MAX(EPSINIT,w[i]);
@@ -429,13 +441,13 @@ void LowRankQP( int *n, int *m, int *p, int* method, int* verbose, int* niter,
     };
 
     struct sol solution = { alpha, beta, xi, zeta };
-    struct sol step;
 
     /* Step direction vectors */
+    struct sol step;
     step.alpha = (double *) calloc( 3*(*n)+*p, sizeof(double) );
-    step.beta  = step.alpha+*n;// (double *) calloc( (*p), sizeof(double) );
-    step.xi    = step.beta+*p;//(double *) calloc( (*n), sizeof(double) );
-    step.zeta  = step.xi+*n;//(double *) calloc( (*n), sizeof(double) );
+    step.beta  = step.alpha+*n;
+    step.xi    = step.beta+*p;
+    step.zeta  = step.xi+*n;
 
     /* Some repeatedly occuring vectors */
     double *UminusAlpha     = (double *) calloc( *n, sizeof(double) );
