@@ -1,8 +1,15 @@
+CFLAGS ?= -Wall -Wextra -std=c99 -fPIC
+IFLAGS ?= -I/usr/include/python2.7 -I/usr/local/lib/python2.7/site-packages/numpy/core/include
+LFLAGS ?= -lblas -llapack -lm -lpython
 
 # ---- Link ---------------------------
 _LowRankQP.so:  LowRankQP.o
-	gcc -shared -fPIC LowRankQP.o LowRankQPmodule.o -lblas -llapack -o _LowRankQP.so
+	$(CC) $(CFLAGS) LowRankQP.o LowRankQPmodule.o $(LFLAGS) -shared -o _LowRankQP.so
 
 # ---- gcc C compile ------------------
 LowRankQP.o:  LowRankQP.c LowRankQPmodule.c Makefile
-	gcc -shared -fPIC -c LowRankQP.c LowRankQPmodule.c -I/usr/include/python2.7 -I/usr/lib/python2.7/dist-packages/numpy/core/include/numpy
+	$(CC) -c LowRankQP.c LowRankQPmodule.c $(IFLAGS) $(CFLAGS)
+
+
+clean:
+	rm *.o *.so
