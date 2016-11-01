@@ -8,7 +8,7 @@ There is one function in this package:
     
     def LowRankQP(Vmat, dvec, Amat, bvec, uvec)
 
-     Solves min α'Vα - α'd subject to Aα > b and 0 ≤ α ≤ u
+     Solves min α'Vα - α'd subject to Aα = b and 0 ≤ α ≤ u
 
       Vmat - p x p symmetric matrix
       dvec - p x 1 vector
