@@ -62,6 +62,7 @@ See https://cran.r-project.org/web/packages/LowRankQP/index.html
     ext_modules = extmods,
     package_dir = {"pylrqp": "src/python"},
     packages = ["pylrqp"],
+    setup_requires=['numpy'],
     classifiers=[
         'Intended Audience :: Science/Research',
         'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
