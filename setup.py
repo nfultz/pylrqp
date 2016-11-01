@@ -24,11 +24,11 @@ BLAS_NOUNDERSCORES = False
 
 # No modifications should be needed below this line.
 
-BLAS_NOUNDERSCORES = int(os.environ.get("CVXOPT_BLAS_NOUNDERSCORES",BLAS_NOUNDERSCORES)) == True
-BLAS_LIB = os.environ.get("CVXOPT_BLAS_LIB",BLAS_LIB)
-LAPACK_LIB = os.environ.get("CVXOPT_LAPACK_LIB",LAPACK_LIB)
-BLAS_LIB_DIR = os.environ.get("CVXOPT_BLAS_LIB_DIR",BLAS_LIB_DIR)
-BLAS_EXTRA_LINK_ARGS = os.environ.get("CVXOPT_BLAS_EXTRA_LINK_ARGS",BLAS_EXTRA_LINK_ARGS)
+BLAS_NOUNDERSCORES = int(os.environ.get("BLAS_NOUNDERSCORES",BLAS_NOUNDERSCORES)) == True
+BLAS_LIB = os.environ.get("BLAS_LIB",BLAS_LIB)
+LAPACK_LIB = os.environ.get("LAPACK_LIB",LAPACK_LIB)
+BLAS_LIB_DIR = os.environ.get("BLAS_LIB_DIR",BLAS_LIB_DIR)
+BLAS_EXTRA_LINK_ARGS = os.environ.get("BLAS_EXTRA_LINK_ARGS",BLAS_EXTRA_LINK_ARGS)
 if type(BLAS_LIB) is str: BLAS_LIB = BLAS_LIB.strip().split(',')
 if type(LAPACK_LIB) is str: LAPACK_LIB = LAPACK_LIB.strip().split(',')
 if type(BLAS_EXTRA_LINK_ARGS) is str: BLAS_EXTRA_LINK_ARGS = BLAS_EXTRA_LINK_ARGS.strip().split(',')
